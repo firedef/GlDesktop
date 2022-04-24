@@ -1,3 +1,5 @@
-﻿// See https://aka.ms/new-console-template for more information
+﻿using GnomeGlDesktop;
+
+GlDesktop.Start();
 
 Console.WriteLine("Hello, World!");
