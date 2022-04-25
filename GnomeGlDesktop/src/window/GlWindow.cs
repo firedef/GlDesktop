@@ -92,7 +92,7 @@ void main() {
 	protected override unsafe void OnRenderFrame(FrameEventArgs args) {
 		Context.MakeCurrent();
 		base.OnRenderFrame(args); 
-		GL.ClearColor(0,0,0,.2f);
+		GL.ClearColor(0,0,0,1f);
 		GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
 		
 		GL.UseProgram(shader);
