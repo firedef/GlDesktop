@@ -1,10 +1,9 @@
-using System.Numerics;
 using GnomeGlDesktop.gl;
 using GnomeGlDesktop.imgui;
+using GnomeGlDesktop.objects.mesh;
 using GnomeGlDesktop.utils;
 using MathStuff;
 using MathStuff.vectors;
-using OpenTK.Graphics;
 using OpenTK.Graphics.OpenGL.Compatibility;
 using OpenTK.Windowing.Common;
 using OpenTK.Windowing.Desktop;
@@ -15,100 +14,61 @@ using Window = X11.Window;
 
 namespace GnomeGlDesktop.window;
 
-public struct Vertex {
-	public float3 pos;
-	public float3 col;
-	public Vertex(float3 pos, float3 col) {
-		this.pos = pos;
-		this.col = col;
-	}
-}
-
 public class GlWindow : ImGuiWindow {
-	public GlWindow(GameWindowSettings gameWindowSettings, NativeWindowSettings nativeWindowSettings, int i) : base(gameWindowSettings, nativeWindowSettings, i == 0) {
+	public GlWindow(NativeWindowSettings nativeWindowSettings, int i) : base(nativeWindowSettings, i == 0) {
 		
 	}
 
-	private ushort[] indices = {0, 1, 2, 0, 2, 3};
-
-	Vertex[] vertices = {
-		new(new(-.5f,-.5f, 0), new(1,0,0)),
-		new(new(-.5f,  .5f, 0), new(0,1,0)),
-		new(new(.5f, .5f, 0), new(0,0,1)),
-		new(new(.5f, -.5f, 0), new(0,0,1)),
-	};
-
-	private VBO vbo;
-	private VAO vao;
-	private IBO ibo;
+	private Mesh<Vertex, ushort>? _mesh;
 	private ShaderProgram shader;
 
 	private string vertShader = @"
 #version 330 core
-in vec3 a_pos;
-in vec3 a_col;
+in layout(location=0) vec3 a_pos;
+in layout(location=1) vec3 a_normal;
+in layout(location=2) vec4 a_col;
+in layout(location=3) vec2 a_uv0;
+in layout(location=4) vec2 a_uv1;
 
-out vec3 f_col;
+out vec4 f_col;
 
 void main() {
 	gl_Position = vec4(a_pos, 1.0);
-	f_col = a_col;
+	f_col = a_col.bgra;
 }
 ";
 
 	private string fragShader = @"
 #version 330 core
-in vec3 f_col;
+in vec4 f_col;
 out vec4 frag_col;
 
 void main() {
-	frag_col = vec4(f_col.xyz,1.0);
+	frag_col = f_col;
 }
 ";
 
 	protected override unsafe void OnLoad() {
 		Context.MakeCurrent();
-		//VSync = VSyncMode.On;
 		
 		shader = new(vertShader, fragShader);
 		shader.Bind();
-		
-		vao = VAO.Generate();
-		vao.Bind();
 
-		ibo = IBO.Generate();
-		//ibo.Bind();
-		fixed(ushort* ptr = indices) ibo.BufferData(indices.Length * sizeof(ushort), ptr);
+		_mesh = new();
+		Vertex p0 = new(new(-.5f,-.5f), float3.front, color.softBlue, float2.zero, float2.zero);
+		Vertex p1 = new(new(-.5f, .5f), float3.front, color.softPurple, float2.zero, float2.zero);
+		Vertex p2 = new(new( .5f, .5f), float3.front, color.softRed, float2.zero, float2.zero);
+		Vertex p3 = new(new( .5f,-.5f), float3.front, color.softYellow, float2.zero, float2.zero);
+		_mesh.AddQuad(p0, p1, p2, p3);
+		_mesh!.Buffer();
 		
-		vbo = VBO.Generate();
-		vbo.Bind();
-		fixed(Vertex* ptr = vertices) vbo.BufferData(vertices.Length * sizeof(Vertex), ptr);
-		
-		GL.VertexAttribPointer(0, 3, VertexAttribPointerType.Float, false, sizeof(Vertex), 0);
-		GL.EnableVertexAttribArray(0);
-		
-		GL.VertexAttribPointer(1, 3, VertexAttribPointerType.Float, false, sizeof(Vertex), sizeof(float3));
-		GL.EnableVertexAttribArray(1);
-		
-		// foreach (BasicWindow basicWindow in childs) {
-		// 	GlWindow window = (GlWindow)basicWindow;
-		// 	window.OnLoad();
-		// 	window.OnResize(new(Size));
-		// }
 		base.OnLoad();
-	}
-	protected override void OnUnload() {
-		base.OnUnload();
 	}
 
 	protected override void OnResize(ResizeEventArgs e) {
 		Context.MakeCurrent();
 		GL.Viewport(0, 0, e.Width, e.Height);
 		base.OnResize(e);
-		
-		//foreach (GlWindow window in childWindows) {
-		//	window.OnResize(e);
-		//}
 	}
 
 	private int frameCount = 0;
@@ -116,58 +76,42 @@ void main() {
 		Vector2 p = MouseState.Position;
 		Vector2 winP = Location;
 
-		if (p.X >= 0 && p.X < 32 && p.Y >= 0 && p.Y < 32) {
-			// if (p.X >= winP.X && p.X < winP.X + 32 && p.Y >= winP.Y && p.Y < winP.Y + 32) {
-			frameCount++;
-			if (frameCount > 20) frameCount = 0;
-			else return;
-			isDesktop = !isDesktop;
-			Console.WriteLine(isDesktop);
+		if (p.X is < 0 or >= 32 || p.Y is < 0 or >= 32) return;
+		frameCount++;
+		if (frameCount > 20) frameCount = 0;
+		else return;
+		isDesktop = !isDesktop;
+		Console.WriteLine(isDesktop);
 			
-			Window x11Window = (Window)GLFW.GetX11Window(WindowPtr);
-			IntPtr display = Xlib.XOpenDisplay(null);
-			long[] arr = {(long)XLibUtils.XInternAtom(display, "_NET_WM_WINDOW_TYPE_DESKTOP", true)};
+		Window x11Window = (Window)GLFW.GetX11Window(WindowPtr);
+		IntPtr display = Xlib.XOpenDisplay(null);
+		long[] arr = {(long)XLibUtils.XInternAtom(display, "_NET_WM_WINDOW_TYPE_DESKTOP", true)};
 			
-			Xlib.XLowerWindow(display, x11Window);
+		Xlib.XLowerWindow(display, x11Window);
 			
-			if (!isDesktop) arr = new[]{(long)XLibUtils.XInternAtom(display, "_NET_WM_WINDOW_TYPE_NORMAL", true)};
+		if (!isDesktop) arr = new[]{(long)XLibUtils.XInternAtom(display, "_NET_WM_WINDOW_TYPE_NORMAL", true)};
 			
-			XLibUtils.XChangeProperty(display, x11Window, XLibUtils.XInternAtom(display, "_NET_WM_WINDOW_TYPE", true), Atom.Atom, 32, 0, arr, 1);
+		XLibUtils.XChangeProperty(display, x11Window, XLibUtils.XInternAtom(display, "_NET_WM_WINDOW_TYPE", true), Atom.Atom, 32, 0, arr, 1);
 
-			Xlib.XCloseDisplay(display);
-		}
+		Xlib.XCloseDisplay(display);
 	}
 	protected override unsafe void OnRenderFrame() {
-		//Context.MakeCurrent();
 		UpdateMode();
-		if (isDesktop) GL.ClearColor(0,0,0,1f);
-		else GL.ClearColor(0,0,0,.8f);
+		GL.ClearColor(0, 0, 0, isDesktop ? 1f : .8f);
+
 		GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
 		GL.Viewport(0,0, Size.X, Size.Y);
 		GL.Enable(EnableCap.Blend);
 		
 		float time = (float)DateTime.Now.TimeOfDay.TotalMilliseconds;
-		vertices[0].col.x = math.abs(MathF.Sin(time * .005f));
-		vertices[1].col.x = math.abs(MathF.Sin(time * .001f));
-		vertices[2].col.x = math.abs(MathF.Sin(time * .0001f));
+		_mesh!.vertices.ptr[0].color.rF = math.abs(MathF.Sin(time * .005f));
+		_mesh!.vertices.ptr[1].color.rF = math.abs(MathF.Sin(time * .001f));
+		_mesh!.vertices.ptr[2].color.rF = math.abs(MathF.Sin(time * .0001f));
 		
-		//GL.BindBuffer(BufferTargetARB.ArrayBuffer, vbo);
-		vao.Bind();
-		ibo.Bind();
-		vbo.Bind();
 		shader.Bind();
-		fixed(Vertex* ptr = vertices) vbo.BufferData(vertices.Length * sizeof(Vertex), ptr);
-		//GL.DrawArrays(PrimitiveType.Triangles, 0, 3);
-		GL.DrawElements(PrimitiveType.Triangles, 6, DrawElementsType.UnsignedShort, 0);
+		_mesh.Buffer();
+		_mesh!.Draw();
 		
 		base.OnRenderFrame();
-		//GL.Flush();
-		//SwapBuffers();
-
-		// foreach (GlWindow window in childWindows) {
-		// 	window.ProcessEvents();
-		// 	
-		// 	window.OnRenderFrame(args);
-		// }
 	}
 }

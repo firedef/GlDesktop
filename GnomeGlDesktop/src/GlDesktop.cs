@@ -13,30 +13,28 @@ public static class GlDesktop {
 
 	private static unsafe void AddWindows() {
 		Monitor*[] monitors = GLFW.GetMonitors();
-		//for (int i = 0; i < 1; i++) _windows.Add(CreateWindow(monitors[i], i));
-		for (int i = 0; i < monitors.Length; i++) _windows.Add(CreateWindow(monitors[i], i));
+		for (int i = 0; i < monitors.Length; i++) 
+			_windows.Add(CreateWindow(monitors[i], i, i == 0 ? null : _windows[0].Context));
 		_windows[0].childs = _windows.Skip(1).Cast<BasicWindow>().ToList();
 		_windows[0].Run();
 	}
 
-	private static unsafe GlWindow CreateWindow(Monitor* monitor, int i) {
+	private static unsafe GlWindow CreateWindow(Monitor* monitor, int i, IGLFWGraphicsContext? sharedContext) {
 		GLFW.WindowHint(WindowHintBool.Decorated, false);
 		GLFW.WindowHint(WindowHintBool.Maximized, true);
 		GLFW.WindowHint(WindowHintBool.AutoIconify, true);
 		GLFW.WindowHint(WindowHintBool.TransparentFramebuffer, true);
 		GLFW.WindowHint(WindowHintBool.DoubleBuffer, false);
 		GLFW.WindowHint(WindowHintString.X11InstanceName, "GlDesktop");
-		
-		GameWindowSettings winSettings = GameWindowSettings.Default;
-		winSettings.RenderFrequency = 24;
-		winSettings.IsMultiThreaded = false;
-		
+
 		NativeWindowSettings nativeSettings = NativeWindowSettings.Default;
 		GLFW.GetMonitorPos(monitor, out int x, out int y);
 		nativeSettings.Location = new(x, y);
 		nativeSettings.NumberOfSamples = 4;
+		if (sharedContext != null) nativeSettings.SharedContext = sharedContext;
 		
-		GlWindow win = new(winSettings, nativeSettings, i);
+		GlWindow win = new(nativeSettings, i);
+		win.renderFrequency = 30;
 		
 		Window x11Window = (Window)GLFW.GetX11Window(win.WindowPtr);
 		IntPtr display = Xlib.XOpenDisplay(null);

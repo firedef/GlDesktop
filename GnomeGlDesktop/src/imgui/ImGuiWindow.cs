@@ -20,7 +20,7 @@ public abstract class ImGuiWindow : BasicWindow {
 	
 	private ImGuiController _controller = null!;
 
-	public ImGuiWindow(GameWindowSettings gameWindowSettings, NativeWindowSettings nativeWindowSettings, bool enableImGui) : base(nativeWindowSettings) {
+	public ImGuiWindow(NativeWindowSettings nativeWindowSettings, bool enableImGui) : base(nativeWindowSettings) {
 		this.enableImGui = enableImGui;
 		GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
 	}

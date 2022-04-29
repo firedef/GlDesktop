@@ -6,8 +6,6 @@ namespace GnomeGlDesktop.gl;
 public struct VAO {
 	public static readonly VAO empty = new();
 
-	public static VAO boundBuffer = empty;
-	
 	public uint handle;
 	public bool isGenerated => handle != 0;
 	
@@ -24,9 +22,7 @@ public struct VAO {
 	public static implicit operator VertexArrayHandle(VAO v) => new(v);
 
 	public void Bind() {
-		//if (boundBuffer.handle == handle) return;
 		GL.BindVertexArray(this);
-		boundBuffer = handle;
 	}
 
 	public static VAO Generate() {
@@ -35,15 +31,17 @@ public struct VAO {
 	}
 
 	public static void Unbind() {
-		if (boundBuffer.handle == 0) return;
-		boundBuffer = empty;
 		GL.BindVertexArray(VertexArrayHandle.Zero);
 	}
 
 	public void Dispose() {
 		if (!isGenerated) return;
-		if (boundBuffer.handle == handle) Unbind();
 		GL.DeleteVertexArray(this);
 		handle = 0;
+	}
+
+	public void Attribute(uint loc, int size, VertexAttribPointerType type, bool normalized, int stride, int offset) {
+		GL.VertexAttribPointer(loc, size, type, normalized, stride, offset);
+		GL.EnableVertexAttribArray(loc);
 	}
 }

@@ -9,10 +9,12 @@
 
     <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
       <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+      <DefineConstants>TRACE;SINGLE_GL_CONTEXT_OR_SHARED</DefineConstants>
     </PropertyGroup>
 
     <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
       <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+      <DefineConstants>TRACE;SINGLE_GL_CONTEXT_OR_SHARED</DefineConstants>
     </PropertyGroup>
 
     <ItemGroup>
