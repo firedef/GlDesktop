@@ -1,4 +1,5 @@
 using GnomeGlDesktop.utils;
+using GnomeGlDesktop.window;
 using ImGuiNET;
 using MathStuff;
 using OpenTK.Graphics.OpenGL.Compatibility;
@@ -9,7 +10,7 @@ using X11;
 
 namespace GnomeGlDesktop.imgui; 
 
-public abstract class ImGuiWindow : GameWindow {
+public abstract class ImGuiWindow : BasicWindow {
 	public static bool shiftPressed = false;
 	public static bool ctrlPressed = false;
 	public static bool altPressed = false;
@@ -19,9 +20,9 @@ public abstract class ImGuiWindow : GameWindow {
 	
 	private ImGuiController _controller = null!;
 
-	public ImGuiWindow(GameWindowSettings gameWindowSettings, NativeWindowSettings nativeWindowSettings, bool enableImGui) : base(gameWindowSettings, nativeWindowSettings) {
+	public ImGuiWindow(GameWindowSettings gameWindowSettings, NativeWindowSettings nativeWindowSettings, bool enableImGui) : base(nativeWindowSettings) {
 		this.enableImGui = enableImGui;
-		GL.BlendFunc(BlendingFactor.One, BlendingFactor.OneMinusSrcAlpha);
+		GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
 	}
 	
 	protected override void OnLoad() {
@@ -40,9 +41,7 @@ public abstract class ImGuiWindow : GameWindow {
 		_controller.WindowResized(Size.X, Size.Y);
 	}
 
-	protected override unsafe void OnRenderFrame(FrameEventArgs args) {
-		base.OnRenderFrame(args);
-		
+	protected override unsafe void OnRenderFrame() {
 		shiftPressed = KeyboardState.IsKeyDown(Keys.LeftShift) || KeyboardState.IsKeyDown(Keys.RightShift);
 		ctrlPressed = KeyboardState.IsKeyDown(Keys.LeftControl) || KeyboardState.IsKeyDown(Keys.RightControl);
 		altPressed = KeyboardState.IsKeyDown(Keys.LeftAlt) || KeyboardState.IsKeyDown(Keys.RightAlt);
@@ -57,30 +56,34 @@ public abstract class ImGuiWindow : GameWindow {
 
 	private bool blend = false;
 	private void Layout() {
+		ImGui.PushStyleColor(ImGuiCol.WindowBg, ((color) "#1c202bfa").ToVec4());
+		ImGui.PushStyleColor(ImGuiCol.Border, ((color) "#394259").ToVec4());
+		
+		ImGui.PushStyleColor(ImGuiCol.TitleBg, ((color) "#1c202b").ToVec4());
+		ImGui.PushStyleColor(ImGuiCol.TitleBgCollapsed, ((color) "#1c202bfa").ToVec4());
+		ImGui.PushStyleColor(ImGuiCol.TitleBgActive, ((color) "#394259").ToVec4());
+		
+		ImGui.PushStyleColor(ImGuiCol.Separator, ((color) "#394259").ToVec4());
+		
+		ImGui.PushStyleColor(ImGuiCol.Text, ((color) "#b0c6ff").ToVec4());
+		
 		//ImGui.ShowDemoWindow();
 		ImGui.PushStyleVar(ImGuiStyleVar.FrameRounding, 4);
 		ImGui.PushStyleVar(ImGuiStyleVar.WindowRounding, 8);
 
 		if (ImGui.Button("blend mode")) {
 			blend = !blend;
-			if (blend) GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
-			else GL.BlendFunc(BlendingFactor.One, BlendingFactor.OneMinusSrcAlpha);
+			if (blend) GL.BlendFunc(BlendingFactor.One, BlendingFactor.OneMinusSrcAlpha);
+			else GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
 		}
+
+		ImGui.SliderInt("framerate", ref renderFrequency, 2, 120);
 
 		if (ImGui.Button("exit")) {
 			base.Close();
 		}
 
-		// ImGui.PushStyleColor(ImGuiCol.WindowBg, ((color) "#1c202bfa").ToVec4());
-		// ImGui.PushStyleColor(ImGuiCol.Border, ((color) "#394259").ToVec4());
-		//
-		// ImGui.PushStyleColor(ImGuiCol.TitleBg, ((color) "#1c202b").ToVec4());
-		// ImGui.PushStyleColor(ImGuiCol.TitleBgCollapsed, ((color) "#1c202bfa").ToVec4());
-		// ImGui.PushStyleColor(ImGuiCol.TitleBgActive, ((color) "#394259").ToVec4());
-		//
-		// ImGui.PushStyleColor(ImGuiCol.Separator, ((color) "#394259").ToVec4());
-		//
-		// ImGui.PushStyleColor(ImGuiCol.Text, ((color) "#b0c6ff").ToVec4());
+		
 	}
 
 	protected override void OnTextInput(TextInputEventArgs e) {

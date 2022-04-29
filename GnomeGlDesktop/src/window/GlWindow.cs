@@ -25,15 +25,16 @@ public struct Vertex {
 }
 
 public class GlWindow : ImGuiWindow {
-	public List<GlWindow> childWindows = new();
-
 	public GlWindow(GameWindowSettings gameWindowSettings, NativeWindowSettings nativeWindowSettings, int i) : base(gameWindowSettings, nativeWindowSettings, i == 0) {
 		
 	}
 
+	private ushort[] indices = {0, 1, 2, 0, 2, 3};
+
 	Vertex[] vertices = {
 		new(new(-.5f,-.5f, 0), new(1,0,0)),
-		new(new(.0f,  .5f, 0), new(0,1,0)),
+		new(new(-.5f,  .5f, 0), new(0,1,0)),
+		new(new(.5f, .5f, 0), new(0,0,1)),
 		new(new(.5f, -.5f, 0), new(0,0,1)),
 	};
 
@@ -67,7 +68,7 @@ void main() {
 
 	protected override unsafe void OnLoad() {
 		Context.MakeCurrent();
-		VSync = VSyncMode.On;
+		//VSync = VSyncMode.On;
 		
 		shader = new(vertShader, fragShader);
 		shader.Bind();
@@ -76,11 +77,12 @@ void main() {
 		vao.Bind();
 
 		ibo = IBO.Generate();
-		ibo.Bind();
+		//ibo.Bind();
+		fixed(ushort* ptr = indices) ibo.BufferData(indices.Length * sizeof(ushort), ptr);
 		
 		vbo = VBO.Generate();
 		vbo.Bind();
-		GL.BufferData(BufferTargetARB.ArrayBuffer, vertices, BufferUsageARB.DynamicDraw);
+		fixed(Vertex* ptr = vertices) vbo.BufferData(vertices.Length * sizeof(Vertex), ptr);
 		
 		GL.VertexAttribPointer(0, 3, VertexAttribPointerType.Float, false, sizeof(Vertex), 0);
 		GL.EnableVertexAttribArray(0);
@@ -88,10 +90,11 @@ void main() {
 		GL.VertexAttribPointer(1, 3, VertexAttribPointerType.Float, false, sizeof(Vertex), sizeof(float3));
 		GL.EnableVertexAttribArray(1);
 		
-		foreach (GlWindow window in childWindows) {
-			window.OnLoad();
-			window.OnResize(new(Size));
-		}
+		// foreach (BasicWindow basicWindow in childs) {
+		// 	GlWindow window = (GlWindow)basicWindow;
+		// 	window.OnLoad();
+		// 	window.OnResize(new(Size));
+		// }
 		base.OnLoad();
 	}
 	protected override void OnUnload() {
@@ -134,8 +137,8 @@ void main() {
 			Xlib.XCloseDisplay(display);
 		}
 	}
-	protected override unsafe void OnRenderFrame(FrameEventArgs args) {
-		Context.MakeCurrent();
+	protected override unsafe void OnRenderFrame() {
+		//Context.MakeCurrent();
 		UpdateMode();
 		if (isDesktop) GL.ClearColor(0,0,0,1f);
 		else GL.ClearColor(0,0,0,.8f);
@@ -149,22 +152,22 @@ void main() {
 		vertices[2].col.x = math.abs(MathF.Sin(time * .0001f));
 		
 		//GL.BindBuffer(BufferTargetARB.ArrayBuffer, vbo);
-		ibo.Bind();
 		vao.Bind();
+		ibo.Bind();
 		vbo.Bind();
 		shader.Bind();
-		//ibo.Bind();
-		GL.BufferData(BufferTargetARB.ArrayBuffer, vertices, BufferUsageARB.DynamicDraw);
-		GL.DrawArrays(PrimitiveType.Triangles, 0, 3);
+		fixed(Vertex* ptr = vertices) vbo.BufferData(vertices.Length * sizeof(Vertex), ptr);
+		//GL.DrawArrays(PrimitiveType.Triangles, 0, 3);
+		GL.DrawElements(PrimitiveType.Triangles, 6, DrawElementsType.UnsignedShort, 0);
 		
-		base.OnRenderFrame(args);
+		base.OnRenderFrame();
 		//GL.Flush();
-		SwapBuffers();
+		//SwapBuffers();
 
-		foreach (GlWindow window in childWindows) {
-			window.ProcessEvents();
-			
-			window.OnRenderFrame(args);
-		}
+		// foreach (GlWindow window in childWindows) {
+		// 	window.ProcessEvents();
+		// 	
+		// 	window.OnRenderFrame(args);
+		// }
 	}
 }

@@ -1,4 +1,5 @@
 using GnomeGlDesktop.gl;
+using GnomeGlDesktop.window;
 using ImGuiNET;
 using MathStuff;
 using MathStuff.vectors;
@@ -174,7 +175,7 @@ void main()
 		RenderDrawData(ImGui.GetDrawData());
 	}
 
-	public void Update(GameWindow win) {
+	public void Update(BasicWindow win) {
 		if (_frameStarted) ImGui.Render();
 		
 		//_vao.Bind();
@@ -182,7 +183,7 @@ void main()
 		//_vbo.Bind();
 		//_shader.Bind();
 		
-		SetFrameData((float)win.RenderTime);
+		SetFrameData((float)win.renderTimeDelta);
 		UpdateInput(win);
 		_frameStarted = true;
 		ImGui.NewFrame();
@@ -251,7 +252,7 @@ void main()
 		GL.Disable(EnableCap.ScissorTest);
 	}
 
-	private void UpdateInput(GameWindow win) {
+	private void UpdateInput(BasicWindow win) {
 		ImGuiIOPtr io = ImGui.GetIO();
 		MouseState mouse = win.MouseState;
 		KeyboardState keyboard = win.KeyboardState;
@@ -276,7 +277,7 @@ void main()
 		io.KeySuper = keyboard.IsKeyDown(Keys.LeftSuper) || keyboard.IsKeyDown(Keys.RightSuper);
 	}
 
-	public void OnMouseScroll(OpenTK.Mathematics.Vector2 v) {
+	public void OnMouseScroll(Vector2 v) {
 		ImGuiIOPtr io = ImGui.GetIO();
 		io.MouseWheel = v.Y;
 		io.MouseWheelH = v.X;

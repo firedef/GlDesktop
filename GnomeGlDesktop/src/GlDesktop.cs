@@ -1,10 +1,8 @@
 using GnomeGlDesktop.utils;
 using GnomeGlDesktop.window;
-using ImGuiNET;
 using OpenTK.Windowing.Desktop;
 using OpenTK.Windowing.GraphicsLibraryFramework;
 using X11;
-using Cursor = X11.Cursor;
 using Monitor = OpenTK.Windowing.GraphicsLibraryFramework.Monitor;
 using Window = X11.Window;
 
@@ -17,7 +15,7 @@ public static class GlDesktop {
 		Monitor*[] monitors = GLFW.GetMonitors();
 		//for (int i = 0; i < 1; i++) _windows.Add(CreateWindow(monitors[i], i));
 		for (int i = 0; i < monitors.Length; i++) _windows.Add(CreateWindow(monitors[i], i));
-		_windows[0].childWindows = _windows.Skip(1).ToList();
+		_windows[0].childs = _windows.Skip(1).Cast<BasicWindow>().ToList();
 		_windows[0].Run();
 	}
 
@@ -36,6 +34,8 @@ public static class GlDesktop {
 		NativeWindowSettings nativeSettings = NativeWindowSettings.Default;
 		GLFW.GetMonitorPos(monitor, out int x, out int y);
 		nativeSettings.Location = new(x, y);
+		nativeSettings.NumberOfSamples = 4;
+		
 		GlWindow win = new(winSettings, nativeSettings, i);
 		
 		Window x11Window = (Window)GLFW.GetX11Window(win.WindowPtr);
