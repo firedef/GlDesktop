@@ -24,4 +24,13 @@
       <PackageReference Include="X11" Version="1.0.6" />
     </ItemGroup>
 
+    <ItemGroup>
+      <None Update="data\fonts\Comfortaa-VariableFont_wght.ttf">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </None>
+      <None Update="data\fonts\NotoSansJP-Regular.otf">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </None>
+    </ItemGroup>
+
 </Project>

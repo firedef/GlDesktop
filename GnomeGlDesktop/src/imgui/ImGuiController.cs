@@ -58,13 +58,24 @@ void main()
     outputColor = color * texture(in_fontTexture, texCoord);
 }";
 
-	public ImGuiController(int width, int height) {
+	public unsafe ImGuiController(int width, int height) {
 		_winWidth = width;
 		_winHeight = height;
 		
 		ImGui.SetCurrentContext(ImGui.CreateContext());
 		
 		ImGuiIOPtr io = ImGui.GetIO();
+
+		ImFontConfigPtr cfgPtr = ImGuiNative.ImFontConfig_ImFontConfig();
+		cfgPtr.MergeMode = true;
+
+		io.Fonts.AddFontFromFileTTF("data/fonts/Comfortaa-VariableFont_wght.ttf", 14, new(), io.Fonts.GetGlyphRangesCyrillic());
+		io.Fonts.AddFontFromFileTTF("data/fonts/NotoSansJP-Regular.otf", 14, cfgPtr, io.Fonts.GetGlyphRangesChineseSimplifiedCommon());
+		io.Fonts.AddFontFromFileTTF("data/fonts/NotoSansJP-Regular.otf", 14, cfgPtr, io.Fonts.GetGlyphRangesJapanese());
+		io.Fonts.AddFontFromFileTTF("data/fonts/NotoSansJP-Regular.otf", 14, cfgPtr, io.Fonts.GetGlyphRangesKorean());
+		io.Fonts.Build();
+		
+		
 		io.Fonts.AddFontDefault();
 		io.BackendFlags |= ImGuiBackendFlags.RendererHasVtxOffset;
 		

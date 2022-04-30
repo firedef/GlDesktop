@@ -55,7 +55,7 @@ public abstract class ImGuiWindow : BasicWindow {
 	}
 
 	private bool blend = false;
-	private void Layout() {
+	protected virtual void Layout() {
 		ImGui.PushStyleColor(ImGuiCol.WindowBg, ((color) "#1c202bfa").ToVec4());
 		ImGui.PushStyleColor(ImGuiCol.Border, ((color) "#394259").ToVec4());
 		
