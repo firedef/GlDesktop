@@ -1,6 +1,6 @@
 using OpenTK.Graphics.OpenGL.Compatibility;
 
-namespace GnomeGlDesktop.gl; 
+namespace GnomeGlDesktop.gl.buffers; 
 
 public static class VaoExtensions {
 	public static void AttributeFloat(this VAO vao, uint loc, int stride, int offset) => vao.Attribute(loc, 1, VertexAttribPointerType.Float, false, stride, offset);

@@ -1,7 +1,7 @@
 using OpenTK.Graphics;
 using OpenTK.Graphics.OpenGL.Compatibility;
 
-namespace GnomeGlDesktop.gl; 
+namespace GnomeGlDesktop.gl.buffers; 
 
 public struct VAO {
 	public static readonly VAO empty = new();

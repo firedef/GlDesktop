@@ -1,4 +1,5 @@
 using GnomeGlDesktop.gl;
+using GnomeGlDesktop.gl.buffers;
 using OpenTK.Graphics.OpenGL.Compatibility;
 
 namespace GnomeGlDesktop.objects.mesh; 

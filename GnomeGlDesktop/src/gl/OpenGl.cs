@@ -1,3 +1,4 @@
+using GnomeGlDesktop.gl.shaders;
 using OpenTK.Graphics;
 using OpenTK.Graphics.OpenGL.Compatibility;
 using OpenTK.Windowing.GraphicsLibraryFramework;

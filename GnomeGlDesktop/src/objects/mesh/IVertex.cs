@@ -1,4 +1,5 @@
 using GnomeGlDesktop.gl;
+using GnomeGlDesktop.gl.buffers;
 
 namespace GnomeGlDesktop.objects.mesh; 
 

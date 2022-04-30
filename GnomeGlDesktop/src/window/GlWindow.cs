@@ -1,4 +1,5 @@
 using GnomeGlDesktop.gl;
+using GnomeGlDesktop.gl.shaders;
 using GnomeGlDesktop.imgui;
 using GnomeGlDesktop.objects.mesh;
 using GnomeGlDesktop.utils;
@@ -51,7 +52,9 @@ void main() {
 	protected override unsafe void OnLoad() {
 		Context.MakeCurrent();
 		
-		shader = new(vertShader, fragShader);
+		shader = new();
+		Console.WriteLine(shader.LoadVertexShaderString(vertShader));
+		Console.WriteLine(shader.LoadFragmentShaderString(fragShader));
 		shader.Bind();
 
 		_mesh = new();

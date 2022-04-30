@@ -1,32 +1,32 @@
 using OpenTK.Graphics;
 using OpenTK.Graphics.OpenGL.Compatibility;
 
-namespace GnomeGlDesktop.gl; 
+namespace GnomeGlDesktop.gl.buffers; 
 
-public struct IBO {
-	public static readonly IBO empty = new();
+public struct VBO {
+	public static readonly VBO empty = new();
 
 #if SINGLE_GL_CONTEXT_OR_SHARED
-	private static IBO _boundBuffer = empty;
+	private static VBO _boundBuffer = empty;
 #endif
+
+	private const BufferTargetARB _target = BufferTargetARB.ArrayBuffer;
 	
-	private const BufferTargetARB _target = BufferTargetARB.ElementArrayBuffer;
-	
-	public uint handle { get; private set; }
-	public int length { get; private set; } = 0;
+	public uint handle;
+	public int length = 0;
 	public bool isGenerated => handle != 0;
 	
-	public IBO() => handle = 0;
-	public IBO(uint handle) => this.handle = handle;
-	public IBO(int handle) => this.handle = (uint)handle;
+	public VBO() => handle = 0;
+	public VBO(uint handle) => this.handle = handle;
+	public VBO(int handle) => this.handle = (uint)handle;
 
-	public static implicit operator IBO(int v) => new(v);
-	public static implicit operator IBO(uint v) => new(v);
-	public static implicit operator int(IBO v) => (int) v.handle;
-	public static implicit operator uint(IBO v) => v.handle;
+	public static implicit operator VBO(int v) => new(v);
+	public static implicit operator VBO(uint v) => new(v);
+	public static implicit operator int(VBO v) => (int) v.handle;
+	public static implicit operator uint(VBO v) => v.handle;
 	
-	public static implicit operator IBO(BufferHandle v) => v.Handle;
-	public static implicit operator BufferHandle(IBO v) => new(v);
+	public static implicit operator VBO(BufferHandle v) => v.Handle;
+	public static implicit operator BufferHandle(VBO v) => new(v);
 
 	public void Bind() {
 	#if SINGLE_GL_CONTEXT_OR_SHARED
@@ -35,9 +35,9 @@ public struct IBO {
 	#endif
 		GL.BindBuffer(_target, this);
 	}
-	
+
 	public unsafe void Alloc(int size, BufferUsageARB usage = BufferUsageARB.DynamicDraw) => BufferData(size, null, usage);
-	
+
 	public unsafe void Buffer(int size, void* ptr, BufferUsageARB usage = BufferUsageARB.DynamicDraw) {
 		if (size == length) BufferSubData(0, size, ptr);
 		else BufferData(size, ptr, usage);
@@ -59,10 +59,11 @@ public struct IBO {
 			GL.NamedBufferData((BufferHandle)(int)handle, size, ptr, (VertexBufferObjectUsage) usage);
 			return;
 		}
+		
 		Bind();
 		GL.BufferData(_target, size, ptr, usage);
 	}
-	
+
 	public unsafe void BufferSubData(int offset, int size, void* ptr) {
 		if (OpenGl.supportNamedBuffers) {
 			GL.NamedBufferSubData((BufferHandle)(int)handle, (IntPtr)offset, size, ptr);
@@ -73,8 +74,8 @@ public struct IBO {
 		GL.BufferSubData(_target, (IntPtr)offset, size, ptr);
 	}
 
-	public static IBO Generate() {
-		IBO buffer = GL.CreateBuffer();
+	public static VBO Generate() {
+		VBO buffer = GL.CreateBuffer();
 		return buffer;
 	}
 

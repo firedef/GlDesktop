@@ -1,4 +1,6 @@
 using GnomeGlDesktop.gl;
+using GnomeGlDesktop.gl.buffers;
+using GnomeGlDesktop.gl.shaders;
 using GnomeGlDesktop.window;
 using ImGuiNET;
 using MathStuff;
@@ -212,8 +214,8 @@ void main()
 		ImGuiIOPtr io = ImGui.GetIO();
 		Matrix4 mvp = Matrix4.CreateOrthographicOffCenter(0.0f, io.DisplaySize.X, io.DisplaySize.Y, 0.0f, -1.0f, 1.0f);
 		_shader.Bind();
-		GL.UniformMatrix4fv(_shader.UniformLocation("projection_matrix"), 1, 0, (float*) &mvp);
-		GL.Uniform1i(_shader.UniformLocation("in_fontTexture"), 0);
+		GL.ProgramUniformMatrix4fv(_shader.programHandle, _shader.UniformLocation("projection_matrix"), 1, 0, (float*) &mvp);
+		GL.ProgramUniform1i(_shader.programHandle, _shader.UniformLocation("in_fontTexture"), 0);
 		_vao.Bind();
 		_vbo.Bind();
 		_ibo.Bind();

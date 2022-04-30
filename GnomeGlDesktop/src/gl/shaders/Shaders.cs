@@ -1,6 +1,9 @@
-namespace GnomeGlDesktop.gl; 
+using OpenTK.Graphics.OpenGL.Compatibility;
+
+namespace GnomeGlDesktop.gl.shaders; 
 
 public interface IShaderPart {
+	public ShaderType type { get; }
 	public string? source { get; set; }
 	public int handle { get; set; }
 }
@@ -8,6 +11,7 @@ public interface IShaderPart {
 public struct VertexShader : IShaderPart {
 	public string? source { get; set; }
 	public int handle { get; set; }
+	public ShaderType type => ShaderType.VertexShader;
 
 	public VertexShader(string? src) : this() => source = src;
 }
@@ -15,6 +19,7 @@ public struct VertexShader : IShaderPart {
 public struct FragmentShader : IShaderPart {
 	public string? source { get; set; }
 	public int handle { get; set; }
+	public ShaderType type => ShaderType.FragmentShader;
 	
 	public FragmentShader(string? src) : this() => source = src;
 }
@@ -22,6 +27,7 @@ public struct FragmentShader : IShaderPart {
 public struct GeometryShader : IShaderPart {
 	public string? source { get; set; }
 	public int handle { get; set; }
+	public ShaderType type => ShaderType.GeometryShader;
 	
 	public GeometryShader(string? src) : this() => source = src;
 }
