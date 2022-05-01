@@ -8,7 +8,6 @@ using MathStuff.vectors;
 using OpenTK.Graphics;
 using OpenTK.Graphics.OpenGL.Compatibility;
 using OpenTK.Mathematics;
-using OpenTK.Windowing.Desktop;
 using OpenTK.Windowing.GraphicsLibraryFramework;
 using Vector4 = System.Numerics.Vector4;
 
@@ -65,18 +64,9 @@ void main()
 		ImGui.SetCurrentContext(ImGui.CreateContext());
 		
 		ImGuiIOPtr io = ImGui.GetIO();
-
-		ImFontConfigPtr cfgPtr = ImGuiNative.ImFontConfig_ImFontConfig();
-		cfgPtr.MergeMode = true;
-
-		io.Fonts.AddFontFromFileTTF("data/fonts/Comfortaa-VariableFont_wght.ttf", 14, new(), io.Fonts.GetGlyphRangesCyrillic());
-		io.Fonts.AddFontFromFileTTF("data/fonts/NotoSansJP-Regular.otf", 14, cfgPtr, io.Fonts.GetGlyphRangesChineseSimplifiedCommon());
-		io.Fonts.AddFontFromFileTTF("data/fonts/NotoSansJP-Regular.otf", 14, cfgPtr, io.Fonts.GetGlyphRangesJapanese());
-		io.Fonts.AddFontFromFileTTF("data/fonts/NotoSansJP-Regular.otf", 14, cfgPtr, io.Fonts.GetGlyphRangesKorean());
-		io.Fonts.Build();
+		LoadFonts(io);
 		
 		
-		io.Fonts.AddFontDefault();
 		io.BackendFlags |= ImGuiBackendFlags.RendererHasVtxOffset;
 		
 		CreateDeviceResources();
@@ -85,6 +75,53 @@ void main()
 		
 		ImGui.NewFrame();
 		_frameStarted = true;
+	}
+
+	private static unsafe void LoadFonts(ImGuiIOPtr io) {
+		// get ranges for characters
+		IntPtr commonRanges = GetRanges(io.Fonts.GetGlyphRangesDefault(), io.Fonts.GetGlyphRangesCyrillic());
+		IntPtr asianRanges = GetRanges(io.Fonts.GetGlyphRangesChineseSimplifiedCommon(), io.Fonts.GetGlyphRangesJapanese(), io.Fonts.GetGlyphRangesKorean());
+		IntPtr regularIconsRanges = LoadCharacters("data/fonts/FontAwesomeGlyphs.json");
+		IntPtr brandIconsRanges = LoadCharacters("data/fonts/FontAwesomeBrandsGlyphs.json");
+		
+		// create merge font confing
+		ImFontConfigPtr cfgPtr = ImGuiNative.ImFontConfig_ImFontConfig();
+		cfgPtr.MergeMode = true;
+		
+		// load fonts
+		LoadFont(io, "data/fonts/Comfortaa-VariableFont_wght.ttf", new(), commonRanges);
+		LoadFont(io, "data/fonts/NotoSansJP-Regular.otf", cfgPtr, asianRanges);
+		LoadFont(io, "data/fonts/fa-regular-400.ttf", cfgPtr, regularIconsRanges);
+		LoadFont(io, "data/fonts/fa-brands-400.ttf", cfgPtr, brandIconsRanges);
+		
+		// merge loaded fonts into one
+		io.Fonts.Build();
+	}
+
+	private static IntPtr LoadCharacters(string path) => GetRanges(ImGuiGlyphs.ParseGlyphsJson(File.ReadAllText(Path.GetFullPath(path))));
+
+	private static unsafe IntPtr GetRanges(IEnumerable<char> characters) {
+		ImFontGlyphRangesBuilderPtr builderPtr = ImGuiNative.ImFontGlyphRangesBuilder_ImFontGlyphRangesBuilder();
+		foreach (char character in characters) builderPtr.AddChar(character);
+		
+		builderPtr.BuildRanges(out ImVector ranges);
+		builderPtr.Destroy();
+		
+		return ranges.Data;
+	}
+	
+	private static unsafe IntPtr GetRanges(params IntPtr[] addRanges) {
+		ImFontGlyphRangesBuilderPtr builderPtr = ImGuiNative.ImFontGlyphRangesBuilder_ImFontGlyphRangesBuilder();
+		foreach (IntPtr range in addRanges) builderPtr.AddRanges(range);
+		
+		builderPtr.BuildRanges(out ImVector ranges);
+		builderPtr.Destroy();
+		
+		return ranges.Data;
+	}
+
+	private static void LoadFont(ImGuiIOPtr io, string path, ImFontConfigPtr cfgPtr, IntPtr ranges) {
+		io.Fonts.AddFontFromFileTTF(path, 14, cfgPtr, ranges);
 	}
 
 	public void PressChar(char c) => _pressedChars.Add(c);
@@ -196,7 +233,7 @@ void main()
 		//_vbo.Bind();
 		//_shader.Bind();
 		
-		SetFrameData((float)win.renderTimeDelta);
+		SetFrameData((float)win.renderTimeDelta/1000);
 		UpdateInput(win);
 		_frameStarted = true;
 		ImGui.NewFrame();

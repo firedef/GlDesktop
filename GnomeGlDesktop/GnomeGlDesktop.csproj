@@ -20,6 +20,7 @@
     <ItemGroup>
       <PackageReference Include="ImGui.NET" Version="1.87.3" />
       <PackageReference Include="MathStuff" Version="1.0.0" />
+      <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
       <PackageReference Include="OpenTK" Version="5.0.0-pre.7" />
       <PackageReference Include="X11" Version="1.0.6" />
     </ItemGroup>
@@ -29,6 +30,21 @@
         <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       </None>
       <None Update="data\fonts\NotoSansJP-Regular.otf">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </None>
+      <None Update="data\fonts\FontAwesomeGlyphs.json">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </None>
+      <None Update="data\fonts\FontAwesomeBrandsGlyphs.json">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </None>
+      <None Update="data\fonts\fa-solid-900.ttf">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </None>
+      <None Update="data\fonts\fa-brands-400.ttf">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </None>
+      <None Update="data\fonts\fa-regular-400.ttf">
         <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       </None>
     </ItemGroup>
