@@ -19,7 +19,9 @@ public static class ImGuiGlyphs {
 		return addedGlyphs;
 	}
 	
-	public static char emptyFolder => glyphs["folder"];
-	public static char filledFolder => glyphs["folder-blank"];
+	public static char emptyFolder => glyphs["folder-blank"];
+	public static char folder => glyphs["folder"];
 	public static char github => glyphs["github"];
+	
+	public static char file => glyphs["file"];
 }

@@ -91,7 +91,7 @@ void main()
 		// load fonts
 		LoadFont(io, "data/fonts/Comfortaa-VariableFont_wght.ttf", new(), commonRanges);
 		LoadFont(io, "data/fonts/NotoSansJP-Regular.otf", cfgPtr, asianRanges);
-		LoadFont(io, "data/fonts/fa-regular-400.ttf", cfgPtr, regularIconsRanges);
+		LoadFont(io, "data/fonts/fa-solid-900.ttf", cfgPtr, regularIconsRanges);
 		LoadFont(io, "data/fonts/fa-brands-400.ttf", cfgPtr, brandIconsRanges);
 		
 		// merge loaded fonts into one
