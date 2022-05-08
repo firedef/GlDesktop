@@ -142,23 +142,23 @@ void main() {
 		base.OnLoad();
 		
 		shader = new();
-		Console.WriteLine(shader.LoadVertexShaderString(vertShader));
-		Console.WriteLine(shader.LoadFragmentShaderString(fragShader));
+		shader.LoadVertexShaderString(vertShader);
+		shader.LoadFragmentShaderString(fragShader);
 		shader.Bind();
 		
 		shader2 = new();
-		Console.WriteLine(shader2.LoadVertexShaderString(vertShader));
-		Console.WriteLine(shader2.LoadFragmentShaderString(fragShader2));
+		shader2.LoadVertexShaderString(vertShader);
+		shader2.LoadFragmentShaderString(fragShader2);
 		shader2.Bind();
 		
 		shader3 = new();
-		Console.WriteLine(shader3.LoadVertexShaderString(vertShader));
-		Console.WriteLine(shader3.LoadFragmentShaderString(fragShader3));
+		shader3.LoadVertexShaderString(vertShader);
+		shader3.LoadFragmentShaderString(fragShader3);
 		shader3.Bind();
 		
 		shader4 = new();
-		Console.WriteLine(shader4.LoadVertexShaderString(vertShader));
-		Console.WriteLine(shader4.LoadFragmentShaderString(fragShader4));
+		shader4.LoadVertexShaderString(vertShader);
+		shader4.LoadFragmentShaderString(fragShader4);
 		shader4.Bind();
 	
 		_mesh = new();

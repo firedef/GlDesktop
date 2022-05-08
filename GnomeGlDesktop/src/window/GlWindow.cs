@@ -20,7 +20,7 @@ using Vector2 = OpenTK.Mathematics.Vector2;
 using Window = X11.Window;
 
 namespace GnomeGlDesktop.window;
-
+/*
 public class GlWindow : ImGuiWindow {
 	public GlWindow(NativeWindowSettings nativeWindowSettings, int i) : base(nativeWindowSettings, i == 0) {
 		
@@ -185,4 +185,4 @@ void main() {
 		Context.MakeCurrent();
 		_renderTarget.BlitToScreen(Size);
 	}
-}
+}*/

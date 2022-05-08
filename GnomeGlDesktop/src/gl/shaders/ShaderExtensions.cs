@@ -32,7 +32,6 @@ public static class ShaderExtensions {
 		GL.ValidateProgram(handle);
 		int validateStatus = 0;
 		GL.GetProgrami(handle, ProgramPropertyARB.ValidateStatus, ref validateStatus);
-		Console.WriteLine(validateStatus);
 		return validateStatus == 1;
 	}
 
