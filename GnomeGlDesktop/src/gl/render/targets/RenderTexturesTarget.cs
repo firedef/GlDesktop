@@ -1,10 +1,12 @@
+using GnomeGlDesktop.debug.log;
 using GnomeGlDesktop.gl.render.attachments;
+using GnomeGlDesktop.gl.render.blit;
 using OpenTK.Graphics.OpenGL.Compatibility;
 using OpenTK.Mathematics;
 
 namespace GnomeGlDesktop.gl.render.targets; 
 
-public class RenderTexturesTarget : IRenderTarget, IDisposable {
+public class RenderTexturesTarget : IRenderTarget, IBlittable, IDisposable {
 	private const int _textureCount = 2;
 	
 	public readonly FrameBuffer[] frameBuffers = new FrameBuffer[_textureCount];
@@ -20,6 +22,9 @@ public class RenderTexturesTarget : IRenderTarget, IDisposable {
 	public List<IFramebufferAttachment> nextAttachments => framebufferAttachments[(framebufferIndex + 1) % _textureCount];
 
 	public RenderTexture nextRenderTexture => (RenderTexture)nextAttachments[0];
+	
+	public FrameBuffer GetBlitDestFramebuffer() => currentFramebuffer;
+	public Vector2i GetBlitDestFramebufferSize() => framebufferSize;
 	
 	public RenderTexturesTarget(int width, int height, int samples = 0) {
 		BindContext();
@@ -75,22 +80,38 @@ public class RenderTexturesTarget : IRenderTarget, IDisposable {
 			
 			framebufferAttachments[t].Add(attachment);
 		}
+		
+		Log.Note($"Add {id} {format} to render targets [[{string.Join(", ", frameBuffers.Select(v => v.handle.Handle.ToString()))}]] with {samples} samples");
 	}
 	
 	public void BlitToScreen(Vector2i screenSize) {
 		currentFramebuffer.BlitTo(FrameBuffer.screen, framebufferSize.X, framebufferSize.Y, screenSize.X, screenSize.Y, ClearBufferMask.ColorBufferBit);
 	}
 	
-	public void BlitToRenderTarget(IRenderTarget renderTarget) {
-		currentFramebuffer.BlitTo(renderTarget.currentFramebuffer, framebufferSize.X, framebufferSize.Y, renderTarget.framebufferSize.X, renderTarget.framebufferSize.Y, ClearBufferMask.ColorBufferBit);
+	public void BlitToScreen(Vector2i screenSize, ReadBufferMode srcAttachment) {
+		GL.BindFramebuffer(FramebufferTarget.ReadFramebuffer, currentFramebuffer.handle);
+		GL.BindFramebuffer(FramebufferTarget.DrawFramebuffer, FrameBuffer.screen.handle);
+		GL.ReadBuffer(srcAttachment);
+		currentFramebuffer.BlitTo(FrameBuffer.screen, framebufferSize.X, framebufferSize.Y, screenSize.X, screenSize.Y, ClearBufferMask.ColorBufferBit);
+		GL.ReadBuffer(ReadBufferMode.ColorAttachment0);
 	}
 	
-	public void BlitToRenderTarget(IRenderTarget renderTarget, ReadBufferMode srcAttachment, DrawBufferMode dstAttachment) {
+	public void Blit(IBlitDest renderTarget) {
+		currentFramebuffer.BlitTo(renderTarget.GetBlitDestFramebuffer(), framebufferSize.X, framebufferSize.Y, renderTarget.GetBlitDestFramebufferSize().X, renderTarget.GetBlitDestFramebufferSize().Y, ClearBufferMask.ColorBufferBit);
+	}
+	
+	public void Blit(IBlitDest renderTarget, ReadBufferMode srcAttachment, DrawBufferMode dstAttachment) {
+		renderTarget.BeforeBlit(this);
+		
+		GL.BindFramebuffer(FramebufferTarget.ReadFramebuffer, currentFramebuffer.handle);
+		GL.BindFramebuffer(FramebufferTarget.DrawFramebuffer, renderTarget.GetBlitDestFramebuffer().handle);
 		GL.ReadBuffer(srcAttachment);
 		GL.DrawBuffer(dstAttachment);
-		currentFramebuffer.BlitTo(renderTarget.currentFramebuffer, framebufferSize.X, framebufferSize.Y, renderTarget.framebufferSize.X, renderTarget.framebufferSize.Y, ClearBufferMask.ColorBufferBit);
+		currentFramebuffer.BlitTo(renderTarget.GetBlitDestFramebuffer(), framebufferSize.X, framebufferSize.Y, renderTarget.GetBlitDestFramebufferSize().X, renderTarget.GetBlitDestFramebufferSize().Y, ClearBufferMask.ColorBufferBit);
 		GL.ReadBuffer(ReadBufferMode.ColorAttachment0);
 		GL.DrawBuffer(DrawBufferMode.ColorAttachment0);
+		
+		renderTarget.AfterBlit(this);
 	}
 
 	public void Swap() => framebufferIndex = (framebufferIndex + 1) % _textureCount;

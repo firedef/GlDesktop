@@ -9,19 +9,19 @@ using Monitor = OpenTK.Windowing.GraphicsLibraryFramework.Monitor;
 namespace GnomeGlDesktop; 
 
 public static class GlDesktop {
-	private static CustomRendererBase _rendererBase;
+	private static CustomRenderer _renderer;
 
 	private static unsafe void AddWindows() {
-		_rendererBase = new();
+		_renderer = new();
 		
 		Monitor*[] monitors = GLFW.GetMonitors();
 		Log.Note($"Found {monitors.Length} monitors");
 		
 		foreach (Monitor* m in monitors)
-			_rendererBase.windows.Add(AppBackend.backend.CreateDesktopWindow("GlDesktop", m, GlContext.global.windowPtr));
+			_renderer.AddWindow(AppBackend.backend.CreateDesktopWindow("GlDesktop", m, GlContext.global.windowPtr));
 		
 		Log.Important("Application loop start");
-		_rendererBase.Run();
+		_renderer.Run();
 		Log.Important("Application loop exit");
 	}
 

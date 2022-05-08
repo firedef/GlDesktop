@@ -1,4 +1,5 @@
 using GnomeGlDesktop.gl.render.attachments;
+using GnomeGlDesktop.gl.render.renderer;
 using GnomeGlDesktop.gl.shaders;
 using GnomeGlDesktop.objects.mesh;
 using MathStuff;
@@ -8,7 +9,7 @@ using OpenTK.Windowing.GraphicsLibraryFramework;
 
 namespace GnomeGlDesktop.gl.render; 
 
-public class CustomRendererBase : RendererBase {
+public class CustomRenderer : Renderer {
 	private static Mesh<Vertex, ushort>? _mesh;
 	private static Mesh<Vertex, ushort>? _mesh2;
 	private static ShaderProgram shader;
@@ -175,8 +176,6 @@ void main() {
 		p2 = new(new( .5f,-.5f), float3.front, color.softRed, new(1, 0), float2.zero);
 		_mesh2.AddTriangle(p0, p1, p2);
 		_mesh2!.Buffer();
-
-		// GLFW.SetCursorPosCallback(windows[0].windowPtr, (w, x, y) => mousePos = new((float) x, (float) y));
 	}
 
 	protected override void PostProcess() {
@@ -191,42 +190,36 @@ void main() {
 			for (int i = 0; i < 9; i++) {
 				GL.Uniform1i(locHorizontal, 0);
 				GL.Uniform1f(locStep, 0.001f * (i + 3));
-				postProcess.UniformDownsampledTextureAttachment(0, 0);
-				postProcess.DrawToDownsampledTexture(shader);
+				UniformDownsampledTexture(0, 0);
+				ApplyToDownsampledTexture(shader);
 				
 				GL.Uniform1i(locHorizontal, 1);
-				postProcess.UniformDownsampledTextureAttachment(0, 0);
-				postProcess.DrawToDownsampledTexture(shader);
+				UniformDownsampledTexture(0, 0);
+				ApplyToDownsampledTexture(shader);
 			}
 		
 		if (emissiveBlur) {
 			shader4.Bind();
-			postProcess.UniformDownsampledTextureAttachment(1, 0);
-			postProcess.DrawToDownsampledTexture(shader4, DrawBufferMode.ColorAttachment1);
+			UniformDownsampledTexture(1, 0);
+			ApplyToDownsampledTexture(shader4, DrawBufferMode.ColorAttachment1);
 			
 			shader.Bind();
 			for (int i = 0; i < 9; i++) {
 				GL.Uniform1i(locHorizontal, 0);
 				GL.Uniform1f(locStep, 0.001f * (i + 3));
-				postProcess.UniformDownsampledTextureAttachment(1, 0);
-				postProcess.DrawToDownsampledTexture(shader, DrawBufferMode.ColorAttachment1);
+				UniformDownsampledTexture(1, 0);
+				ApplyToDownsampledTexture(shader, DrawBufferMode.ColorAttachment1);
 
 				GL.Uniform1i(locHorizontal, 1);
-				postProcess.UniformDownsampledTextureAttachment(1, 0);
-				postProcess.DrawToDownsampledTexture(shader, DrawBufferMode.ColorAttachment1);
+				UniformDownsampledTexture(1, 0);
+				ApplyToDownsampledTexture(shader, DrawBufferMode.ColorAttachment1);
 			}
 		}
 		
 		shader3.Bind();
-		postProcess.UniformTextureAttachment(0, 0);
-		postProcess.UniformDownsampledTextureAttachment(1, 1);
-		postProcess.PostProcess(shader3);
-		
-		// for (int i = 0; i < 1; i++) {
-		// 	postProcess.PostProcess(shader);
-		// }
-		//postProcess.PostProcess(shader);
-		//postProcess.PostProcess(shader);
+		UniformTexture(0, 0);
+		UniformDownsampledTexture(1, 1);
+		PostProcess(shader3);
 	}
 
 	protected override unsafe void OnRender() {
@@ -275,7 +268,7 @@ void main() {
 		// _mesh2!.vertices.ptr[1].position.y =  .5f + MathF.Sin(time * .0005f + 0.2f) * .4f;
 		// _mesh2!.vertices.ptr[2].position.y = -.5f + MathF.Sin(time * .0005f + 0.4f) * .4f;
 		
-		GLFW.GetCursorPos(windows[0].windowPtr, out double xC, out double yC);
+		GLFW.GetCursorPos(GetWindow(0).windowPtr, out double xC, out double yC);
 		mousePos = new((float)xC, (float)yC);
 
 		mousePos /= new float2(1920, 1080);

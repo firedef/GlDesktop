@@ -1,4 +1,5 @@
 using GnomeGlDesktop.gl.render;
+using GnomeGlDesktop.gl.render.blit;
 using GnomeGlDesktop.utils;
 using OpenTK.Mathematics;
 using OpenTK.Windowing.GraphicsLibraryFramework;
@@ -8,7 +9,7 @@ using Window = OpenTK.Windowing.GraphicsLibraryFramework.Window;
 
 namespace GnomeGlDesktop.window; 
 
-public unsafe class GlfwWindow : IDisposable {
+public unsafe class GlfwWindow : IDisposable, IBlitDest {
 	public readonly Window* windowPtr;
 	public Vector2i size { get; protected set; }
 
@@ -35,4 +36,10 @@ public unsafe class GlfwWindow : IDisposable {
 		GC.SuppressFinalize(this);
 	}
 	~GlfwWindow() => ReleaseUnmanagedResources();
+	
+	public FrameBuffer GetBlitDestFramebuffer() => FrameBuffer.screen;
+	public Vector2i GetBlitDestFramebufferSize() => size;
+	
+	public void BeforeBlit(IBlitSrc src) => MakeCurrent();
+	public void AfterBlit(IBlitSrc src) => Swap();
 }

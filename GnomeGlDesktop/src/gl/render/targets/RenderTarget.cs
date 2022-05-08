@@ -1,10 +1,12 @@
+using GnomeGlDesktop.debug.log;
 using GnomeGlDesktop.gl.render.attachments;
+using GnomeGlDesktop.gl.render.blit;
 using OpenTK.Graphics.OpenGL.Compatibility;
 using OpenTK.Mathematics;
 
 namespace GnomeGlDesktop.gl.render.targets; 
 
-public class RenderTarget : IDisposable, IRenderTarget {
+public class RenderTarget : IDisposable, IRenderTarget, IBlittable {
 	public FrameBuffer frameBuffer;
 	public List<IFramebufferAttachment> attachments = new();
 	public Vector2i framebufferSize { get; set; }
@@ -13,6 +15,9 @@ public class RenderTarget : IDisposable, IRenderTarget {
 	public uint colorAttachmentCount = 0;
 
 	public FrameBuffer currentFramebuffer => frameBuffer;
+
+	public FrameBuffer GetBlitDestFramebuffer() => frameBuffer;
+	public Vector2i GetBlitDestFramebufferSize() => framebufferSize;
 
 	public RenderTarget() { }
 	
@@ -37,6 +42,8 @@ public class RenderTarget : IDisposable, IRenderTarget {
 	public virtual void End() {}
 
 	public void RecreateRenderBuffers(int width, int height, int samples = 0) {
+		Log.Message($"Recreate render target {width}x{height} with {samples} samples");
+		
 		int attachmentCount = attachments.Count;
 		framebufferSize = new(width, height);
 		for (int i = 0; i < attachmentCount; i++) {
@@ -48,7 +55,6 @@ public class RenderTarget : IDisposable, IRenderTarget {
 				? RenderBuffer.Create(frameBuffer, id, framebufferSize, samples, format) 
 				: RenderTexture.Create(frameBuffer, id, framebufferSize, samples, (SizedInternalFormat) format);
 		}
-		
 	}
 
 	public void AddAttachment(int samples = 0, AttachmentType type = AttachmentType.color, InternalFormat format = InternalFormat.Rgba) {
@@ -66,24 +72,26 @@ public class RenderTarget : IDisposable, IRenderTarget {
 			: RenderTexture.Create(frameBuffer, id, framebufferSize, samples, (SizedInternalFormat) format);
 		
 		attachments.Add(attachment);
+		
+		Log.Note($"Add {id} {format} to render target {frameBuffer.handle.Handle} with {samples} samples");
 	}
 	
-	public void BlitToScreen(Vector2i screenSize, BlitFramebufferFilter filter = BlitFramebufferFilter.Linear) {
-		frameBuffer.BlitTo(FrameBuffer.screen, framebufferSize.X, framebufferSize.Y, screenSize.X, screenSize.Y, ClearBufferMask.ColorBufferBit, filter);
+	public void BlitToScreen(Vector2i screenSize) {
+		frameBuffer.BlitTo(FrameBuffer.screen, framebufferSize.X, framebufferSize.Y, screenSize.X, screenSize.Y, ClearBufferMask.ColorBufferBit);
 	}
 	
-	public void BlitToRenderTarget(IRenderTarget renderTarget, BlitFramebufferFilter filter = BlitFramebufferFilter.Linear) {
-		frameBuffer.BlitTo(renderTarget.currentFramebuffer, framebufferSize.X, framebufferSize.Y, renderTarget.framebufferSize.X, renderTarget.framebufferSize.Y, ClearBufferMask.ColorBufferBit, filter);
-	}
-	
-	public void BlitToRenderTarget(IRenderTarget renderTarget, ReadBufferMode read, DrawBufferMode draw, BlitFramebufferFilter filter = BlitFramebufferFilter.Linear) {
+	public void Blit(IBlitDest renderTarget, ReadBufferMode srcAttachment = ReadBufferMode.ColorAttachment0, DrawBufferMode dstAttachment = DrawBufferMode.ColorAttachment0) {
+		renderTarget.BeforeBlit(this);
+		
 		GL.BindFramebuffer(FramebufferTarget.ReadFramebuffer, currentFramebuffer.handle);
-		GL.BindFramebuffer(FramebufferTarget.DrawFramebuffer, renderTarget.currentFramebuffer.handle);
-		GL.ReadBuffer(read);
-		GL.DrawBuffer(draw);
-		frameBuffer.BlitTo(renderTarget.currentFramebuffer, framebufferSize.X, framebufferSize.Y, renderTarget.framebufferSize.X, renderTarget.framebufferSize.Y, ClearBufferMask.ColorBufferBit, filter);
+		GL.BindFramebuffer(FramebufferTarget.DrawFramebuffer, renderTarget.GetBlitDestFramebuffer().handle);
+		GL.ReadBuffer(srcAttachment);
+		GL.DrawBuffer(dstAttachment);
+		frameBuffer.BlitTo(renderTarget.GetBlitDestFramebuffer(), framebufferSize.X, framebufferSize.Y, renderTarget.GetBlitDestFramebufferSize().X, renderTarget.GetBlitDestFramebufferSize().Y, ClearBufferMask.ColorBufferBit, BlitFramebufferFilter.Linear);
 		GL.ReadBuffer(ReadBufferMode.ColorAttachment0);
 		GL.DrawBuffer(DrawBufferMode.ColorAttachment0);
+		
+		renderTarget.AfterBlit(this);
 	}
 
 	public void Dispose() {

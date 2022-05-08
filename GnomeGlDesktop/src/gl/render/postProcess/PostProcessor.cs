@@ -1,4 +1,6 @@
+using GnomeGlDesktop.debug.log;
 using GnomeGlDesktop.gl.render.attachments;
+using GnomeGlDesktop.gl.render.blit;
 using GnomeGlDesktop.gl.render.targets;
 using GnomeGlDesktop.gl.shaders;
 using GnomeGlDesktop.objects.mesh;
@@ -10,20 +12,27 @@ using OpenTK.Mathematics;
 
 namespace GnomeGlDesktop.gl.render.postProcess; 
 
-public class PostProcessor : IDisposable {
+public class PostProcessor : IDisposable, IBlittable {
 	public readonly RenderTexturesTarget textures;
 	public readonly RenderTexturesTarget downsampledTextures;
-	private const int _downsample = 2;
+
+	private Vector2i resolution;
+	private Vector2i downsampleResolution;
 	
 	private readonly Mesh<Vertex, byte> _screenMesh;
+	
+	public FrameBuffer GetBlitDestFramebuffer() => textures.currentFramebuffer;
+	public Vector2i GetBlitDestFramebufferSize() => textures.framebufferSize;
 
-	public PostProcessor(Vector2i targetResolution) {
-		//targetResolution = new(800, 800);
-		textures = new(targetResolution.X, targetResolution.Y);
+	public PostProcessor(Vector2i resolution, Vector2i downsampleResolution) {
+		this.resolution = resolution;
+		this.downsampleResolution = downsampleResolution;
+		
+		Log.Message($"Create postprocess render target {resolution.X}x{resolution.Y}");
+		textures = new(resolution.X, resolution.Y);
 
-		downsampledTextures = new(targetResolution.X>>_downsample, targetResolution.Y>>_downsample);
-		downsampledTextures.AddAttachment(0, AttachmentType.color, InternalFormat.Rgb16f); // blur
-		downsampledTextures.AddAttachment(0, AttachmentType.color, InternalFormat.Rgb16f); // emissive blur
+		Log.Message($"Create postprocess downsampled render target {downsampleResolution.X}x{downsampleResolution.Y}");
+		downsampledTextures = new(downsampleResolution.X, downsampleResolution.Y);
 
 		Vertex[] vertices = {
 			new(new(-1,-1), float3.front, color.white, new(0,0), new(0,0)),
@@ -36,8 +45,17 @@ public class PostProcessor : IDisposable {
 		_screenMesh = new(vertices, indices);
 		_screenMesh.Buffer();
 	}
-	
-	public void RecreateTextures(Vector2i targetResolution) => textures.RecreateRenderBuffers(targetResolution.X, targetResolution.Y);
+
+	public void RecreateTextures(Vector2i targetResolution, Vector2i targetDownsampleResolution) {
+		resolution = targetResolution;
+		downsampleResolution = targetDownsampleResolution;
+		
+		Log.Message($"Recreate postprocess render target {resolution.X}x{resolution.Y}");
+		textures.RecreateRenderBuffers(targetResolution.X, targetResolution.Y);
+		
+		Log.Message($"Recreate postprocess downsampled render target {downsampleResolution.X}x{downsampleResolution.Y}");
+		downsampledTextures.RecreateRenderBuffers(targetDownsampleResolution.X, targetDownsampleResolution.Y);
+	}
 	public void Swap() => textures.Swap();
 	public void AddAttachment(AttachmentType type, InternalFormat format, float quality = 1) => textures.AddAttachment(0, type, format, quality);
 
@@ -45,7 +63,7 @@ public class PostProcessor : IDisposable {
 	public void UniformDownsampledTextureAttachment(int id, uint location) => ((RenderTexture)downsampledTextures.currentAttachments[id]).Uniform(location);
 	
 	public void PostProcess(ShaderProgram shader, DrawBufferMode mode = DrawBufferMode.ColorAttachment0) {
-		GL.Viewport(0, 0, 1920, 1080);
+		GL.Viewport(0, 0, resolution.X, resolution.Y);
 		shader.Bind();
 		
 		textures.Swap();
@@ -58,7 +76,7 @@ public class PostProcessor : IDisposable {
 	}
 	
 	public void DrawToDownsampledTexture(ShaderProgram shader, DrawBufferMode mode = DrawBufferMode.ColorAttachment0) {
-		GL.Viewport(0, 0, 1920>>_downsample, 1080>>_downsample);
+		GL.Viewport(0, 0, downsampleResolution.X, downsampleResolution.Y);
 		shader.Bind();
 		
 		downsampledTextures.Swap();
@@ -71,22 +89,11 @@ public class PostProcessor : IDisposable {
 	}
 
 	public void BlitToScreen(Vector2i screenSize) {
-		//Swap();
-		
-		//GL.NamedFramebufferReadBuffer(FramebufferHandle.Zero, );
 		textures.BlitToScreen(screenSize);
-		//GL.DrawBuffer(DrawBufferMode.ColorAttachment0);
-		
-		// GL.BindFramebuffer(FramebufferTarget.ReadFramebuffer, downsampledTextures.currentFramebuffer.handle);
-		// GL.BindFramebuffer(FramebufferTarget.DrawFramebuffer, FramebufferHandle.Zero);
-		// GL.ReadBuffer(ReadBufferMode.ColorAttachment1);
-		// GL.BlitFramebuffer(0, 0, 1920>>_downsample, 1080>>_downsample, 0, 0, screenSize.X, screenSize.Y, ClearBufferMask.ColorBufferBit, BlitFramebufferFilter.Linear);
-		// GL.ReadBuffer(ReadBufferMode.ColorAttachment0);
 	}
 	
-	public void BlitToRenderTarget(IRenderTarget target, ReadBufferMode srcAttachment = ReadBufferMode.ColorAttachment0, DrawBufferMode dstAttachment = DrawBufferMode.ColorAttachment0) {
-		//Swap();
-		textures.BlitToRenderTarget(target, srcAttachment, dstAttachment);
+	public void Blit(IBlitDest target, ReadBufferMode srcAttachment = ReadBufferMode.ColorAttachment0, DrawBufferMode dstAttachment = DrawBufferMode.ColorAttachment0) {
+		textures.Blit(target, srcAttachment, dstAttachment);
 	}
 
 	public void Dispose() {
