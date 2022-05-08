@@ -1,3 +1,4 @@
+using GnomeGlDesktop.debug.log;
 using GnomeGlDesktop.gl.render.attachments;
 using GnomeGlDesktop.gl.render.postProcess;
 using GnomeGlDesktop.gl.render.targets;
@@ -25,12 +26,7 @@ public class RendererBase : IDisposable {
 	public bool useThreadSleepForRenderDelay = true;
 
 	public readonly List<GlfwWindow> windows = new();
-	
-	// public GlfwRenderer(int width, int height, int samples = 0, InternalFormat format = InternalFormat.Rgba) : base(width, height, samples, format) {
-	// 	this.format = format;
-	// 	this.samples = samples;
-	// }
-	
+
 	public RendererBase() {
 		GlContext.global.MakeCurrent();
 		general = new(targetFramebufferResolution.X, targetFramebufferResolution.Y, samples, format, true);
@@ -40,11 +36,6 @@ public class RendererBase : IDisposable {
 		postProcess = new(targetFramebufferResolution);
 		postProcess.AddAttachment(AttachmentType.color, InternalFormat.Rgba16f);
 		postProcess.AddAttachment(AttachmentType.depthStencil, InternalFormat.Depth24Stencil8);
-		
-
-		// frameBuffer = FrameBuffer.Create();
-		// frameBuffer.Bind();
-		// RecreateRenderBuffers(targetFramebufferResolution.X, targetFramebufferResolution.Y, samples, format);
 	}
 
 	public void RecreateRenderBuffers() {
@@ -69,9 +60,16 @@ public class RendererBase : IDisposable {
 	protected virtual void PostProcess() {}
 
 	public void Run() {
+		Log.Message($"Renderer OnLoad()");
 		OnLoad();
+		
+		Log.Message($"Renderer loop");
 		while (!ShouldClose()) Render();
+		
+		Log.Message($"Renderer OnUnload()");
 		OnUnload();
+		
+		Log.Message($"Renderer dispose");
 		Dispose();
 	}
 	

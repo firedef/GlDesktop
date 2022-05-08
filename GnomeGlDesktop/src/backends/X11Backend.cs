@@ -1,3 +1,4 @@
+using GnomeGlDesktop.debug.log;
 using GnomeGlDesktop.utils;
 using GnomeGlDesktop.window;
 using X11;
@@ -10,6 +11,8 @@ public class X11Backend : AppBackend {
 	
 
 	public override void SetWindowType(GlfwWindow window, WindowType type) {
+		Log.Note($"Set window mode to {type}");
+		
 		string typeString = type switch {
 			WindowType.normal => _windowTypeNormal,
 			WindowType.desktop => _windowTypeDesktop,
@@ -18,7 +21,7 @@ public class X11Backend : AppBackend {
 		
 		IntPtr display = Xlib.XOpenDisplay(null);
 		
-		X11.Window x11Window = window.x11Window;
+		Window x11Window = window.x11Window;
 		Xlib.XLowerWindow(display, x11Window);
 		long[] arr = {(long)XLibUtils.XInternAtom(display, typeString, true)};
 		XLibUtils.XChangeProperty(display, x11Window, XLibUtils.XInternAtom(display, "_NET_WM_WINDOW_TYPE", true), Atom.Atom, 32, 0, arr, 1);

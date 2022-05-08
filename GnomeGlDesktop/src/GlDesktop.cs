@@ -1,4 +1,5 @@
 using GnomeGlDesktop.backends;
+using GnomeGlDesktop.debug.log;
 using GnomeGlDesktop.gl.render;
 using GnomeGlDesktop.window;
 using OpenTK.Graphics;
@@ -14,9 +15,14 @@ public static class GlDesktop {
 		_rendererBase = new();
 		
 		Monitor*[] monitors = GLFW.GetMonitors();
+		Log.Note($"Found {monitors.Length} monitors");
+		
 		foreach (Monitor* m in monitors)
 			_rendererBase.windows.Add(AppBackend.backend.CreateDesktopWindow("GlDesktop", m, GlContext.global.windowPtr));
+		
+		Log.Important("Application loop start");
 		_rendererBase.Run();
+		Log.Important("Application loop exit");
 	}
 
 	// private static unsafe GlWindow CreateWindow(Monitor* monitor, int i, IGLFWGraphicsContext? sharedContext) {
@@ -51,9 +57,18 @@ public static class GlDesktop {
 	// }
 
 	public static void Start() {
+		Log.Important("Application start");
+		
+		Log.Message("Set thread priority to Lowest");
 		Thread.CurrentThread.Priority = ThreadPriority.Lowest;
+		
+		Log.Message("GLFW Init");
 		GLFW.Init();
+		
+		Log.Message("Load OpenGl bindings");
 		GLLoader.LoadBindings(new GLFWBindingsContext());
+		
+		Log.Message("Adding windows");
 		AddWindows();
 	}
 }
