@@ -23,7 +23,7 @@ public class ImGuiController : IDisposable {
 	private int _winHeight;
 	private Texture _fontTex;
 	private ShaderProgram _shader;
-	private float2 _scaleFactor = float2.one;
+	public float2 scaleFactor = float2.one;
 
 	private VAO _vao;
 	private VBO _vbo;
@@ -202,8 +202,8 @@ void main()
 
 	private void SetFrameData(float dt) {
 		ImGuiIOPtr io = ImGui.GetIO();
-		io.DisplaySize = new(_winWidth / _scaleFactor.x, _winHeight / _scaleFactor.y);
-		io.DisplayFramebufferScale = new(_scaleFactor.x, _scaleFactor.y);
+		io.DisplaySize = new(_winWidth / scaleFactor.x, _winHeight / scaleFactor.y);
+		io.DisplayFramebufferScale = new(scaleFactor.x, scaleFactor.y);
 		io.DeltaTime = dt;
 	}
 

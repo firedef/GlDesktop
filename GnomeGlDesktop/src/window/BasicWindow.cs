@@ -1,3 +1,4 @@
+using ImGuiNET;
 using OpenTK.Graphics.OpenGL.Compatibility;
 using OpenTK.Windowing.Desktop;
 using OpenTK.Windowing.GraphicsLibraryFramework;
@@ -45,12 +46,13 @@ public class BasicWindow : NativeWindow {
 			}
 
 			if (!useThreadSleepForRenderDelay) continue;
-			int sleepMs = (int)((delay - currentDelay).TotalMilliseconds * .8);
-			Thread.Sleep(sleepMs);
+			int sleepMs = (int)((delay - currentDelay).TotalMilliseconds * .9);
+			if (sleepMs > 1) Thread.Sleep(sleepMs);
 		}
 	}
 	
 	private void UpdateCurrentWindow() {
+		Thread.Sleep(0);
 		Context.MakeCurrent();
 
 		ProcessEvents();

@@ -17,4 +17,5 @@ public static class ImGuiColors {
 	public static Vector4 ToVec4(this string col) => ((color) col).ToVec4();
 	
 	public static color ToColor(this Vector4 col) => new(col.X, col.Y, col.Z, col.W);
+	public static color ToColor(this string col) => col;
 }

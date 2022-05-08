@@ -1,5 +1,7 @@
+using GnomeGlDesktop.gl.render;
 using GnomeGlDesktop.utils;
 using GnomeGlDesktop.window;
+using OpenTK.Graphics;
 using OpenTK.Windowing.Desktop;
 using OpenTK.Windowing.GraphicsLibraryFramework;
 using X11;
@@ -10,28 +12,39 @@ namespace GnomeGlDesktop;
 
 public static class GlDesktop {
 	private static readonly List<GlWindow> _windows = new();
+	private static CustomRendererBase _rendererBase;
 
 	private static unsafe void AddWindows() {
+		// Monitor*[] monitors = GLFW.GetMonitors();
+		// for (int i = 0; i < monitors.Length; i++) 
+		// 	_windows.Add(CreateWindow(monitors[i], i, i == 0 ? null : _windows[0].Context));
+		// _windows[0].childs = _windows.Skip(1).Cast<BasicWindow>().ToList();
+		// _windows[0].Run();
+
+		_rendererBase = new();
+		
 		Monitor*[] monitors = GLFW.GetMonitors();
-		for (int i = 0; i < monitors.Length; i++) 
-			_windows.Add(CreateWindow(monitors[i], i, i == 0 ? null : _windows[0].Context));
-		_windows[0].childs = _windows.Skip(1).Cast<BasicWindow>().ToList();
-		_windows[0].Run();
+		for (int i = 0; i < monitors.Length; i++)
+			_rendererBase.windows.Add(GlfwWindow.CreateDesktop(new(1920,1080), "GlDesktop", monitors[i], i));
+		Console.WriteLine(monitors.Length);
+		_rendererBase.Run();
 	}
 
 	private static unsafe GlWindow CreateWindow(Monitor* monitor, int i, IGLFWGraphicsContext? sharedContext) {
 		GLFW.WindowHint(WindowHintBool.Decorated, false);
 		GLFW.WindowHint(WindowHintBool.Maximized, true);
 		GLFW.WindowHint(WindowHintBool.AutoIconify, true);
-		GLFW.WindowHint(WindowHintBool.TransparentFramebuffer, true);
+		//GLFW.WindowHint(WindowHintBool.TransparentFramebuffer, true);
 		GLFW.WindowHint(WindowHintBool.DoubleBuffer, false);
 		GLFW.WindowHint(WindowHintString.X11InstanceName, "GlDesktop");
+		
 
 		NativeWindowSettings nativeSettings = NativeWindowSettings.Default;
 		GLFW.GetMonitorPos(monitor, out int x, out int y);
 		nativeSettings.Location = new(x, y);
-		nativeSettings.NumberOfSamples = 4;
-		if (sharedContext != null) nativeSettings.SharedContext = sharedContext;
+		//nativeSettings.NumberOfSamples = 4;
+		nativeSettings.SharedContext = new GLFWGraphicsContext(GlContext.global.windowPtr);
+		// if (sharedContext != null) nativeSettings.SharedContext = sharedContext;
 		
 		GlWindow win = new(nativeSettings, i);
 		win.renderFrequency = 30;
@@ -51,6 +64,7 @@ public static class GlDesktop {
 	public static void Start() {
 		Thread.CurrentThread.Priority = ThreadPriority.Lowest;
 		GLFW.Init();
+		GLLoader.LoadBindings(new GLFWBindingsContext());
 		AddWindows();
 	}
 }

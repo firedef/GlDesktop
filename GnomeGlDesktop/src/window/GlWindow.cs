@@ -1,11 +1,17 @@
 using GnomeGlDesktop.gl;
+using GnomeGlDesktop.gl.render;
+using GnomeGlDesktop.gl.render.targets;
 using GnomeGlDesktop.gl.shaders;
 using GnomeGlDesktop.imgui;
+using GnomeGlDesktop.imgui.addons;
 using GnomeGlDesktop.objects.mesh;
 using GnomeGlDesktop.utils;
+using ImGuiNET;
 using MathStuff;
 using MathStuff.vectors;
+using OpenTK.Graphics;
 using OpenTK.Graphics.OpenGL.Compatibility;
+using OpenTK.Mathematics;
 using OpenTK.Windowing.Common;
 using OpenTK.Windowing.Desktop;
 using OpenTK.Windowing.GraphicsLibraryFramework;
@@ -20,8 +26,8 @@ public class GlWindow : ImGuiWindow {
 		
 	}
 
-	private Mesh<Vertex, ushort>? _mesh;
-	private ShaderProgram shader;
+	private static Mesh<Vertex, ushort>? _mesh;
+	private static ShaderProgram shader;
 
 	private string vertShader = @"
 #version 330 core
@@ -48,28 +54,77 @@ void main() {
 	frag_col = f_col;
 }
 ";
+	
+	private static RenderTarget _renderTarget;
+	private static float quality => _renderTarget.framebufferSize.X / 1920f;
+	private static float targetQuality = 1;
+	private static int samples = 0;
+	private static int maxSamples = 0;
+	public override Vector2i fbSize => _renderTarget.framebufferSize;
+	public override float2 scaleFactor => quality;
 
-	protected override unsafe void OnLoad() {
-		Context.MakeCurrent();
+	protected override void OnLoad() {
+		GlContext.global.MakeCurrent();
+		if (childs.Count != 0) {
+			GL.GetInteger(GetPName.MaxFramebufferSamples, ref maxSamples);
+			_renderTarget = new((int)(1920 * targetQuality), (int)(1080 * targetQuality));
 		
-		shader = new();
-		Console.WriteLine(shader.LoadVertexShaderString(vertShader));
-		Console.WriteLine(shader.LoadFragmentShaderString(fragShader));
-		shader.Bind();
-
-		_mesh = new();
-		Vertex p0 = new(new(-.5f,-.5f), float3.front, color.softBlue, float2.zero, float2.zero);
-		Vertex p1 = new(new(-.5f, .5f), float3.front, color.softPurple, float2.zero, float2.zero);
-		Vertex p2 = new(new( .5f, .5f), float3.front, color.softRed, float2.zero, float2.zero);
-		Vertex p3 = new(new( .5f,-.5f), float3.front, color.softYellow, float2.zero, float2.zero);
-		_mesh.AddQuad(p0, p1, p2, p3);
-		_mesh!.Buffer();
+			shader = new();
+			Console.WriteLine(shader.LoadVertexShaderString(vertShader));
+			Console.WriteLine(shader.LoadFragmentShaderString(fragShader));
+			shader.Bind();
+	
+			_mesh = new();
+			Vertex p0 = new(new(-.5f,-.5f), float3.front, color.softBlue, float2.zero, float2.zero);
+			Vertex p1 = new(new(-.5f, .5f), float3.front, color.softPurple, float2.zero, float2.zero);
+			Vertex p2 = new(new( .5f, .5f), float3.front, color.softRed, float2.zero, float2.zero);
+			Vertex p3 = new(new( .5f,-.5f), float3.front, color.softYellow, float2.zero, float2.zero);
+			_mesh.AddQuad(p0, p1, p2, p3);
+			_mesh!.Buffer();
+		}
 		
 		base.OnLoad();
+		Context.MakeCurrent();
+		GLFW.SwapInterval(1);
+	}
+
+	private static ImGuiFileDialog? _fileDialog;
+	private static float opacity = 1f;
+	private static float opacityDesktopModeMul = 1f;
+	private static float opacityAppModeMul = .8f;
+	private static int bitsPerTex = 16;
+	
+	protected override void Layout() {
+		_fileDialog ??= new("/mnt/sdb/");
+		base.Layout();
+		ImGui.SliderFloat("opacity", ref opacity, 0, 1);
+		ImGui.SliderFloat("opacity desktop mode mul", ref opacityDesktopModeMul, 0, 1);
+		ImGui.SliderFloat("opacity app mode mul", ref opacityAppModeMul, 0, 1);
+
+		bool upd = false;
+		upd |= ImGui.SliderFloat("rendering quality", ref targetQuality, 0, 1);
+		upd |= ImGui.SliderInt("samples", ref samples, 0, (int) math.log2(maxSamples), (1 << samples).ToString());
+		upd |= ImGui.SliderInt("color bits", ref bitsPerTex, 0, 32);
+		
+		if (ImGuiElements.ButtonPurple("recreate render buffers") || upd) {
+			InternalFormat format = bitsPerTex switch {
+				<= 4 => InternalFormat.Rgb4,
+				<= 5 => InternalFormat.Rgb5,
+				<= 8 => InternalFormat.Rgb8,
+				<= 10 => InternalFormat.Rgb10,
+				<= 12 => InternalFormat.Rgb12,
+				<= 16 => InternalFormat.Rgb16f,
+				_ => InternalFormat.Rgb32f,
+			};
+			_renderTarget.RecreateRenderBuffers((int)(1920 * targetQuality), (int)(1080 * targetQuality), (samples < 2 || targetQuality < 1f) ? 0 : (1 << samples));
+			OnResize(new(Size));
+		}
+		_fileDialog?.Layout();
 	}
 
 	protected override void OnResize(ResizeEventArgs e) {
 		Context.MakeCurrent();
+		//GlContext.global.MakeCurrent();
 		GL.Viewport(0, 0, e.Width, e.Height);
 		base.OnResize(e);
 	}
@@ -100,21 +155,34 @@ void main() {
 	}
 	protected override unsafe void OnRenderFrame() {
 		UpdateMode();
-		GL.ClearColor(0, 0, 0, isDesktop ? 1f : .8f);
 
-		GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
-		GL.Viewport(0,0, Size.X, Size.Y);
-		GL.Enable(EnableCap.Blend);
+		GlContext.global.MakeCurrent();
+		if (childs.Count != 0)
+		{
+			_renderTarget.Begin();
+			
+			GL.ClearColor(0, 0, 0, (isDesktop ? opacityDesktopModeMul : opacityAppModeMul) * opacity);
+
+			GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
+			GL.Viewport(0, 0, _renderTarget.framebufferSize.X, _renderTarget.framebufferSize.Y);
+			
+			GL.Enable(EnableCap.Blend);
+
+			float time = (float)DateTime.Now.TimeOfDay.TotalMilliseconds;
+			_mesh!.vertices.ptr[0].color.rF = math.abs(MathF.Sin(time * .005f));
+			_mesh!.vertices.ptr[1].color.rF = math.abs(MathF.Sin(time * .001f));
+			_mesh!.vertices.ptr[2].color.rF = math.abs(MathF.Sin(time * .0001f));
+
+			shader.Bind();
+			_mesh.Buffer();
+			_mesh!.Draw();
+			
+			base.OnRenderFrame();
+			
+			_renderTarget.End();
+		}
 		
-		float time = (float)DateTime.Now.TimeOfDay.TotalMilliseconds;
-		_mesh!.vertices.ptr[0].color.rF = math.abs(MathF.Sin(time * .005f));
-		_mesh!.vertices.ptr[1].color.rF = math.abs(MathF.Sin(time * .001f));
-		_mesh!.vertices.ptr[2].color.rF = math.abs(MathF.Sin(time * .0001f));
-		
-		shader.Bind();
-		_mesh.Buffer();
-		_mesh!.Draw();
-		
-		base.OnRenderFrame();
+		Context.MakeCurrent();
+		_renderTarget.BlitToScreen(Size);
 	}
 }

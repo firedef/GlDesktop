@@ -1,8 +1,11 @@
+using GnomeGlDesktop.gl.render;
 using GnomeGlDesktop.utils;
 using GnomeGlDesktop.window;
 using ImGuiNET;
 using MathStuff;
+using MathStuff.vectors;
 using OpenTK.Graphics.OpenGL.Compatibility;
+using OpenTK.Mathematics;
 using OpenTK.Windowing.Common;
 using OpenTK.Windowing.Desktop;
 using OpenTK.Windowing.GraphicsLibraryFramework;
@@ -15,10 +18,13 @@ public abstract class ImGuiWindow : BasicWindow {
 	public static bool ctrlPressed = false;
 	public static bool altPressed = false;
 	public static bool superPressed = false;
-	private readonly bool enableImGui;
+	protected readonly bool enableImGui;
 	public bool isDesktop = true;
 	
 	private ImGuiController _controller = null!;
+
+	public virtual Vector2i fbSize => Size;
+	public virtual float2 scaleFactor => float2.one;
 
 	public ImGuiWindow(NativeWindowSettings nativeWindowSettings, bool enableImGui) : base(nativeWindowSettings) {
 		this.enableImGui = enableImGui;
@@ -29,16 +35,18 @@ public abstract class ImGuiWindow : BasicWindow {
 		base.OnLoad();
 		if (!enableImGui) return;
 		
-		Context.MakeCurrent();
-		_controller = new(Size.X, Size.Y);
+		//GlContext.global.MakeCurrent();
+		//Context.MakeCurrent();
+		_controller = new(fbSize.X, fbSize.Y);
 	}
 
 	protected override void OnResize(ResizeEventArgs e) {
 		base.OnResize(e);
 		if (!enableImGui) return;
 		
-		Context.MakeCurrent();
-		_controller.WindowResized(Size.X, Size.Y);
+		GlContext.global.MakeCurrent();
+		//Context.MakeCurrent();
+		_controller.WindowResized(fbSize.X, fbSize.Y);
 	}
 
 	protected override unsafe void OnRenderFrame() {
@@ -49,12 +57,18 @@ public abstract class ImGuiWindow : BasicWindow {
 
 		if (!enableImGui || isDesktop) return;
 
+		_controller.scaleFactor = scaleFactor;
 		_controller.Update(this);
 		Layout();
 		_controller.Render();
 	}
 
+	private static BlendingFactor sFactor = BlendingFactor.SrcAlpha;
+	private static BlendingFactor dFactor = BlendingFactor.OneMinusSrcAlpha;
+	private static int sId = 0;
+	private static int dId = 0;
 	private bool blend = false;
+	private bool doubleBuffer = false;
 	protected virtual void Layout() {
 		ImGui.PushStyleColor(ImGuiCol.WindowBg, ((color) "#1c202bfa").ToVec4());
 		ImGui.PushStyleColor(ImGuiCol.Border, ((color) "#394259").ToVec4());
@@ -71,11 +85,11 @@ public abstract class ImGuiWindow : BasicWindow {
 		ImGui.PushStyleVar(ImGuiStyleVar.FrameRounding, 4);
 		ImGui.PushStyleVar(ImGuiStyleVar.WindowRounding, 8);
 
-		if (ImGui.Button("blend mode")) {
-			blend = !blend;
-			if (blend) GL.BlendFunc(BlendingFactor.One, BlendingFactor.OneMinusSrcAlpha);
-			else GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
-		}
+		BlendingFactor[] blendingModes = Enum.GetValues<BlendingFactor>();
+
+		GL.BlendFunc(sFactor, dFactor);
+
+		ImGui.Checkbox("thread sleep", ref useThreadSleepForRenderDelay);
 
 		ImGui.SliderInt("framerate", ref renderFrequency, 2, 120);
 
@@ -88,13 +102,15 @@ public abstract class ImGuiWindow : BasicWindow {
 
 	protected override void OnTextInput(TextInputEventArgs e) {
 		base.OnTextInput(e);
-		Context.MakeCurrent();
+		GlContext.global.MakeCurrent();
+		//Context.MakeCurrent();
 		if (enableImGui) _controller.PressChar((char) e.Unicode);
 	}
 
 	protected override void OnMouseWheel(MouseWheelEventArgs e) {
 		base.OnMouseWheel(e);
-		Context.MakeCurrent();
+		GlContext.global.MakeCurrent();
+		//Context.MakeCurrent();
 		if (enableImGui) _controller.OnMouseScroll(e.Offset);
 	}
 }

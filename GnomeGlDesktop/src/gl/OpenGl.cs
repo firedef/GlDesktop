@@ -44,6 +44,7 @@ public class OpenGl {
 		while (true) {
 			ErrorCode errorCode = GL.GetError();
 			if (errorCode == ErrorCode.NoError) return;
+			Console.WriteLine($"OpenGl error {(int) errorCode}: {errorCode} ({partName})");
 			//Log.Error($"OpenGl error {(int) errorCode}: {errorCode} ({partName})");
 		}
 	}
