@@ -6,7 +6,7 @@ using ImGuiNET;
 using MathStuff;
 using MathStuff.vectors;
 using OpenTK.Graphics;
-using OpenTK.Graphics.OpenGL.Compatibility;
+using OpenTK.Graphics.OpenGL;
 using OpenTK.Mathematics;
 using OpenTK.Windowing.GraphicsLibraryFramework;
 using Vector4 = System.Numerics.Vector4;

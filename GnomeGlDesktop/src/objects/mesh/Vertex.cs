@@ -1,5 +1,4 @@
 using System.Runtime.InteropServices;
-using GnomeGlDesktop.gl;
 using GnomeGlDesktop.gl.buffers;
 using MathStuff;
 using MathStuff.vectors;

@@ -4,7 +4,7 @@ using GnomeGlDesktop.window;
 using ImGuiNET;
 using MathStuff;
 using MathStuff.vectors;
-using OpenTK.Graphics.OpenGL.Compatibility;
+using OpenTK.Graphics.OpenGL;
 using OpenTK.Mathematics;
 using OpenTK.Windowing.Common;
 using OpenTK.Windowing.Desktop;

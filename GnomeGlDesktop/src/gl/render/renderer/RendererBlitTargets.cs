@@ -1,5 +1,5 @@
 using GnomeGlDesktop.gl.render.blit;
-using OpenTK.Graphics.OpenGL.Compatibility;
+using OpenTK.Graphics.OpenGL;
 
 namespace GnomeGlDesktop.gl.render.renderer; 
 

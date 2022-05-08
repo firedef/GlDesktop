@@ -6,8 +6,7 @@ using GnomeGlDesktop.gl.shaders;
 using GnomeGlDesktop.objects.mesh;
 using MathStuff;
 using MathStuff.vectors;
-using OpenTK.Graphics;
-using OpenTK.Graphics.OpenGL.Compatibility;
+using OpenTK.Graphics.OpenGL;
 using OpenTK.Mathematics;
 
 namespace GnomeGlDesktop.gl.render.postProcess; 

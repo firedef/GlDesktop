@@ -1,7 +1,7 @@
 using GnomeGlDesktop.debug.log;
 using GnomeGlDesktop.gl.render.attachments;
 using GnomeGlDesktop.gl.render.blit;
-using OpenTK.Graphics.OpenGL.Compatibility;
+using OpenTK.Graphics.OpenGL;
 using OpenTK.Mathematics;
 
 namespace GnomeGlDesktop.gl.render.targets; 

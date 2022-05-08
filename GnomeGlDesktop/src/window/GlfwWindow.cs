@@ -23,6 +23,9 @@ public unsafe class GlfwWindow : IDisposable, IBlitDest {
 	public void SetPosition(Vector2i pos) => GLFW.SetWindowPos(windowPtr, pos.X, pos.Y);
 
 	public static GlfwWindow Create(Vector2i size, string name, Monitor* monitor, Window* share) {
+		GLFW.WindowHint(WindowHintInt.ContextVersionMinor, 5);
+		GLFW.WindowHint(WindowHintInt.ContextVersionMajor, 4);
+		GLFW.WindowHint(WindowHintOpenGlProfile.OpenGlProfile, OpenGlProfile.Core);
 		GlfwWindow win = new(GLFW.CreateWindow(size.X, size.Y, name, monitor, share));
 		win.size = size;
 		return win;

@@ -4,6 +4,7 @@ using GnomeGlDesktop.gl.render;
 using GnomeGlDesktop.window;
 using OpenTK.Graphics;
 using OpenTK.Windowing.GraphicsLibraryFramework;
+using GL = OpenTK.Graphics.OpenGL.GL;
 using Monitor = OpenTK.Windowing.GraphicsLibraryFramework.Monitor;
 
 namespace GnomeGlDesktop; 
@@ -18,10 +19,10 @@ public static class GlDesktop {
 		Log.Note($"Found {monitors.Length} monitors");
 		
 		foreach (Monitor* m in monitors)
-			_renderer.AddWindow(AppBackend.backend.CreateDesktopWindow("GlDesktop", m, GlContext.global.windowPtr));
+			_renderer.renderer.AddWindow(AppBackend.backend.CreateDesktopWindow("GlDesktop", m, GlContext.global.windowPtr));
 		
 		Log.Important("Application loop start");
-		_renderer.Run();
+		_renderer.renderer.Run();
 		Log.Important("Application loop exit");
 	}
 

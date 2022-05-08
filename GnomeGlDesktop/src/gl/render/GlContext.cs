@@ -1,4 +1,3 @@
-using OpenTK.Graphics.OpenGL.Compatibility;
 using OpenTK.Windowing.GraphicsLibraryFramework;
 
 namespace GnomeGlDesktop.gl.render; 
@@ -13,6 +12,9 @@ public readonly unsafe struct GlContext : IDisposable {
 	public static GlContext CreateWithHints() => new(GLFW.CreateWindow(1, 1, "", null, null));
 	
 	public static GlContext Create() {
+		GLFW.WindowHint(WindowHintInt.ContextVersionMinor, 5);
+		GLFW.WindowHint(WindowHintInt.ContextVersionMajor, 4);
+		GLFW.WindowHint(WindowHintOpenGlProfile.OpenGlProfile, OpenGlProfile.Core);
 		GLFW.WindowHint(WindowHintBool.DoubleBuffer, false);
 		GLFW.WindowHint(WindowHintBool.TransparentFramebuffer, false);
 		GLFW.WindowHint(WindowHintBool.Visible, false);

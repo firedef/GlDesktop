@@ -1,21 +1,24 @@
 using GnomeGlDesktop.gl.render.attachments;
+using GnomeGlDesktop.gl.render.renderable;
 using GnomeGlDesktop.gl.render.renderer;
 using GnomeGlDesktop.gl.shaders;
 using GnomeGlDesktop.objects.mesh;
 using MathStuff;
 using MathStuff.vectors;
-using OpenTK.Graphics.OpenGL.Compatibility;
+using OpenTK.Graphics.OpenGL;
 using OpenTK.Windowing.GraphicsLibraryFramework;
 
 namespace GnomeGlDesktop.gl.render; 
 
-public class CustomRenderer : Renderer {
-	private static Mesh<Vertex, ushort>? _mesh;
-	private static Mesh<Vertex, ushort>? _mesh2;
-	private static ShaderProgram shader;
-	private static ShaderProgram shader2;
-	private static ShaderProgram shader3;
-	private static ShaderProgram shader4;
+public class CustomRenderer {
+	public readonly Renderer renderer;
+	
+	public Mesh<Vertex, ushort>? _mesh;
+	public Mesh<Vertex, ushort>? _mesh2;
+	public ShaderProgram shader;
+	public ShaderProgram shader2;
+	public ShaderProgram shader3;
+	public ShaderProgram shader4;
 
 	private string vertShader = @"
 #version 330 core
@@ -139,8 +142,8 @@ void main() {
 	public float2 smoothPos2;
 	public float time;
 
-	protected override unsafe void OnLoad() {
-		base.OnLoad();
+	public CustomRenderer() {
+		renderer = new();
 		
 		shader = new();
 		shader.LoadVertexShaderString(vertShader);
@@ -176,53 +179,18 @@ void main() {
 		p2 = new(new( .5f,-.5f), float3.front, color.softRed, new(1, 0), float2.zero);
 		_mesh2.AddTriangle(p0, p1, p2);
 		_mesh2!.Buffer();
+		
+		renderer.AddRenderable(new TestRenderable(this));
+		renderer.AddPostFx(new TestPostProcessFx(this));
 	}
+}
 
-	protected override void PostProcess() {
-		shader.Bind();
-		int locHorizontal = shader.UniformLocation("horizontal");
-		int locStep = shader.UniformLocation("step");
+public class TestRenderable : IRenderable {
+	public CustomRenderer custom;
 
-		bool regularBlur = false;
-		bool emissiveBlur = true;
-		
-		if (regularBlur)
-			for (int i = 0; i < 9; i++) {
-				GL.Uniform1i(locHorizontal, 0);
-				GL.Uniform1f(locStep, 0.001f * (i + 3));
-				UniformDownsampledTexture(0, 0);
-				ApplyToDownsampledTexture(shader);
-				
-				GL.Uniform1i(locHorizontal, 1);
-				UniformDownsampledTexture(0, 0);
-				ApplyToDownsampledTexture(shader);
-			}
-		
-		if (emissiveBlur) {
-			shader4.Bind();
-			UniformDownsampledTexture(1, 0);
-			ApplyToDownsampledTexture(shader4, DrawBufferMode.ColorAttachment1);
-			
-			shader.Bind();
-			for (int i = 0; i < 9; i++) {
-				GL.Uniform1i(locHorizontal, 0);
-				GL.Uniform1f(locStep, 0.001f * (i + 3));
-				UniformDownsampledTexture(1, 0);
-				ApplyToDownsampledTexture(shader, DrawBufferMode.ColorAttachment1);
+	public TestRenderable(CustomRenderer custom) => this.custom = custom;
 
-				GL.Uniform1i(locHorizontal, 1);
-				UniformDownsampledTexture(1, 0);
-				ApplyToDownsampledTexture(shader, DrawBufferMode.ColorAttachment1);
-			}
-		}
-		
-		shader3.Bind();
-		UniformTexture(0, 0);
-		UniformDownsampledTexture(1, 1);
-		PostProcess(shader3);
-	}
-
-	protected override unsafe void OnRender() {
+	public unsafe void Render(Renderer renderer) {
 		GL.ClearColor(0, 0, 0, 1);
 
 		GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
@@ -231,17 +199,9 @@ void main() {
 		GL.Enable(EnableCap.Blend);
 		GL.Disable(EnableCap.DepthTest);
 
-		//float time = (float)DateTime.Now.TimeOfDay.TotalMilliseconds;
-
-		float angle = time * .0001f;
+		float angle = custom.time * .0001f;
 		const float b = MathF.PI * .5f;
-		// _mesh!.vertices.ptr[0].position = float2.SinCos(angle + b * 0, MathF.Abs(MathF.Sin(time * .0005f) * 1.4f) + 0.8f);
-		// _mesh!.vertices.ptr[1].position = float2.SinCos(angle + b * 1, MathF.Abs(MathF.Sin(time * .0005f) * 1.4f) + 0.8f);
-		// _mesh!.vertices.ptr[2].position = float2.SinCos(angle + b * 2, MathF.Abs(MathF.Sin(time * .0005f) * 1.4f) + 0.8f);
-		// _mesh!.vertices.ptr[3].position = float2.SinCos(angle + b * 3, MathF.Abs(MathF.Sin(time * .0005f) * 1.4f) + 0.8f);
-
-		//float x = MathF.Sin(time * .0005f)* .1f;
-		//float y = MathF.Cos(time * .0002f)* .1f;
+		
 		float x = -.08f;
 		float y = -.08f;
 
@@ -249,71 +209,106 @@ void main() {
 		float y0 = -1 + y;
 		float x1 = 1 - x;
 		float y1 = 1 - y;
-		_mesh!.vertices.ptr[0].position = new(x0, y0);
-		_mesh!.vertices.ptr[1].position = new(x0, y1);
-		_mesh!.vertices.ptr[2].position = new(x1, y1);
-		_mesh!.vertices.ptr[3].position = new(x1, y0);
+		custom._mesh!.vertices.ptr[0].position = new(x0, y0);
+		custom._mesh!.vertices.ptr[1].position = new(x0, y1);
+		custom._mesh!.vertices.ptr[2].position = new(x1, y1);
+		custom._mesh!.vertices.ptr[3].position = new(x1, y0);
 		
-		//_mesh!.vertices.ptr[0].position.x = math.abs(MathF.Sin(time * .0005f));
-		//_mesh!.vertices.ptr[1].position.x = math.abs(MathF.Sin(time * .0002f));
-		//_mesh!.vertices.ptr[2].position.x = math.abs(MathF.Sin(time * .0009f));
-		//_mesh!.vertices.ptr[3].position.x = math.abs(MathF.Sin(time * .0001f));
+		GLFW.GetCursorPos(custom.renderer.GetWindow(0).windowPtr, out double xC, out double yC);
+		custom.mousePos = new((float)xC, (float)yC);
 
-		// shader.Bind();
-		// postProcess.nextRenderTexture.Uniform();
-		// _mesh.Buffer();
-		// _mesh!.Draw();
-		
-		// _mesh2!.vertices.ptr[0].position.y = -.5f + MathF.Sin(time * .0005f + 0.0f) * .4f;
-		// _mesh2!.vertices.ptr[1].position.y =  .5f + MathF.Sin(time * .0005f + 0.2f) * .4f;
-		// _mesh2!.vertices.ptr[2].position.y = -.5f + MathF.Sin(time * .0005f + 0.4f) * .4f;
-		
-		GLFW.GetCursorPos(GetWindow(0).windowPtr, out double xC, out double yC);
-		mousePos = new((float)xC, (float)yC);
+		custom.mousePos /= new float2(1920, 1080);
+		custom.mousePos *= 2;
+		custom.mousePos -= 1;
+		custom.mousePos.FlipY();
 
-		mousePos /= new float2(1920, 1080);
-		mousePos *= 2;
-		mousePos -= 1;
-		mousePos.FlipY();
-
-		float delta = math.abs(smoothPos0.x - mousePos.x) + math.abs(smoothPos0.y - mousePos.y);
+		float delta = math.abs(custom.smoothPos0.x - custom.mousePos.x) + math.abs(custom.smoothPos0.y - custom.mousePos.y);
 		
 		float spd0 = .005f;
-		smoothPos0 = mousePos * spd0 + smoothPos0 * (1 - spd0);
+		custom.smoothPos0 = custom.mousePos * spd0 + custom.smoothPos0 * (1 - spd0);
 		float spd1 = .01f;
-		smoothPos1 = mousePos * spd1 + smoothPos1 * (1 - spd1);
+		custom.smoothPos1 = custom.mousePos * spd1 + custom.smoothPos1 * (1 - spd1);
 		float spd2 = .02f;
-		smoothPos2 = mousePos * spd2 + smoothPos2 * (1 - spd2);
+		custom.smoothPos2 = custom.mousePos * spd2 + custom.smoothPos2 * (1 - spd2);
 
-		float s = MathF.Sin(time * .00005f) * .3f + .2f;
+		float s = MathF.Sin(custom.time * .00005f) * .3f + .2f;
 		
-		_mesh2!.vertices.ptr[0].position.x = -s + smoothPos0.x * .05f;
-		_mesh2!.vertices.ptr[0].position.y = -s + smoothPos0.y * .05f + MathF.Sin(time * .0005f + 0.0f) * .1f;
+		custom._mesh2!.vertices.ptr[0].position.x = -s + custom.smoothPos0.x * .05f;
+		custom._mesh2!.vertices.ptr[0].position.y = -s + custom.smoothPos0.y * .05f + MathF.Sin(custom.time * .0005f + 0.0f) * .1f;
 		
-		_mesh2!.vertices.ptr[1].position.x = 0 + smoothPos1.x * .05f;
-		_mesh2!.vertices.ptr[1].position.y = s + smoothPos1.y * .05f + MathF.Sin(time * .0005f + 0.2f) * .1f;
+		custom._mesh2!.vertices.ptr[1].position.x = 0 + custom.smoothPos1.x * .05f;
+		custom._mesh2!.vertices.ptr[1].position.y = s + custom.smoothPos1.y * .05f + MathF.Sin(custom.time * .0005f + 0.2f) * .1f;
 		
-		_mesh2!.vertices.ptr[2].position.x =  s + smoothPos2.x * .05f;
-		_mesh2!.vertices.ptr[2].position.y = -s + smoothPos2.y * .05f + MathF.Sin(time * .0005f + 0.4f) * .1f;
+		custom._mesh2!.vertices.ptr[2].position.x =  s + custom.smoothPos2.x * .05f;
+		custom._mesh2!.vertices.ptr[2].position.y = -s + custom.smoothPos2.y * .05f + MathF.Sin(custom.time * .0005f + 0.4f) * .1f;
 		
-		_mesh2!.vertices.ptr[0].color.rF = math.abs(MathF.Sin(time * .005f));
-		_mesh2!.vertices.ptr[1].color.rF = math.abs(MathF.Sin(time * .001f));
-		_mesh2!.vertices.ptr[2].color.rF = math.abs(MathF.Sin(time * .0001f));
+		custom._mesh2!.vertices.ptr[0].color.rF = math.abs(MathF.Sin(custom.time * .005f));
+		custom._mesh2!.vertices.ptr[1].color.rF = math.abs(MathF.Sin(custom.time * .001f));
+		custom._mesh2!.vertices.ptr[2].color.rF = math.abs(MathF.Sin(custom.time * .0001f));
 		
-		_mesh2!.vertices.ptr[0].color.gF = math.abs(MathF.Sin(time * .0005f));
-		_mesh2!.vertices.ptr[1].color.gF = math.abs(MathF.Sin(time * .0001f));
-		_mesh2!.vertices.ptr[2].color.gF = math.abs(MathF.Sin(time * .00001f));
+		custom._mesh2!.vertices.ptr[0].color.gF = math.abs(MathF.Sin(custom.time * .0005f));
+		custom._mesh2!.vertices.ptr[1].color.gF = math.abs(MathF.Sin(custom.time * .0001f));
+		custom._mesh2!.vertices.ptr[2].color.gF = math.abs(MathF.Sin(custom.time * .00001f));
 		
-		_mesh2!.vertices.ptr[0].color.bF = math.abs(MathF.Sin(time * .00005f));
-		_mesh2!.vertices.ptr[1].color.bF = math.abs(MathF.Sin(time * .00001f));
-		_mesh2!.vertices.ptr[2].color.bF = math.abs(MathF.Sin(time * .000001f));
+		custom._mesh2!.vertices.ptr[0].color.bF = math.abs(MathF.Sin(custom.time * .00005f));
+		custom._mesh2!.vertices.ptr[1].color.bF = math.abs(MathF.Sin(custom.time * .00001f));
+		custom._mesh2!.vertices.ptr[2].color.bF = math.abs(MathF.Sin(custom.time * .000001f));
 		
-		_mesh2.Buffer();
+		custom._mesh2.Buffer();
 		
-		shader2.Bind();
-		_mesh2!.Draw();
+		custom.shader2.Bind();
+		custom._mesh2!.Draw();
 		
+		custom.time += 8f * (delta * 4 + 1);
+	}
+}
+
+public class TestPostProcessFx : IPostProcessEffect {
+	public CustomRenderer custom;
+
+	public TestPostProcessFx(CustomRenderer custom) => this.custom = custom;
+
+	public void PostProcess(Renderer renderer) {
+		custom.shader.Bind();
+		int locHorizontal = custom.shader.UniformLocation("horizontal");
+		int locStep = custom.shader.UniformLocation("step");
+
+		bool regularBlur = false;
+		bool emissiveBlur = true;
 		
-		time += 8f * (delta * 4 + 1);
+		if (regularBlur)
+			for (int i = 0; i < 9; i++) {
+				GL.Uniform1i(locHorizontal, 0);
+				GL.Uniform1f(locStep, 0.001f * (i + 3));
+				custom.renderer.UniformDownsampledTexture(0, 0);
+				custom.renderer.ApplyToDownsampledTexture(custom.shader);
+				
+				GL.Uniform1i(locHorizontal, 1);
+				custom.renderer.UniformDownsampledTexture(0, 0);
+				custom.renderer.ApplyToDownsampledTexture(custom.shader);
+			}
+		
+		if (emissiveBlur) {
+			custom.shader4.Bind();
+			custom.renderer.UniformDownsampledTexture(1, 0);
+			custom.renderer.ApplyToDownsampledTexture(custom.shader4, DrawBufferMode.ColorAttachment1);
+			
+			custom.shader.Bind();
+			for (int i = 0; i < 9; i++) {
+				GL.Uniform1i(locHorizontal, 0);
+				GL.Uniform1f(locStep, 0.001f * (i + 3));
+				custom.renderer.UniformDownsampledTexture(1, 0);
+				custom.renderer.ApplyToDownsampledTexture(custom.shader, DrawBufferMode.ColorAttachment1);
+
+				GL.Uniform1i(locHorizontal, 1);
+				custom.renderer.UniformDownsampledTexture(1, 0);
+				custom.renderer.ApplyToDownsampledTexture(custom.shader, DrawBufferMode.ColorAttachment1);
+			}
+		}
+		
+		custom.shader3.Bind();
+		custom.renderer.UniformTexture(0, 0);
+		custom.renderer.UniformDownsampledTexture(1, 1);
+		custom.renderer.PostProcess(custom.shader3);
 	}
 }

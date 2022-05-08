@@ -1,8 +1,8 @@
 using GnomeGlDesktop.gl.shaders;
 using OpenTK.Graphics;
-using OpenTK.Graphics.OpenGL.Compatibility;
+using OpenTK.Graphics.OpenGL;
 using OpenTK.Windowing.GraphicsLibraryFramework;
-using ErrorCode = OpenTK.Graphics.OpenGL.Compatibility.ErrorCode;
+using ErrorCode = OpenTK.Graphics.OpenGL.ErrorCode;
 
 namespace GnomeGlDesktop.gl; 
 

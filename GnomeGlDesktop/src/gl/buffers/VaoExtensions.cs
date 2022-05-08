@@ -1,4 +1,4 @@
-using OpenTK.Graphics.OpenGL.Compatibility;
+using OpenTK.Graphics.OpenGL;
 
 namespace GnomeGlDesktop.gl.buffers; 
 

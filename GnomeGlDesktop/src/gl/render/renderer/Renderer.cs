@@ -2,10 +2,11 @@ using GnomeGlDesktop.debug.log;
 using GnomeGlDesktop.gl.render.attachments;
 using GnomeGlDesktop.gl.render.blit;
 using GnomeGlDesktop.gl.render.postProcess;
+using GnomeGlDesktop.gl.render.renderable;
 using GnomeGlDesktop.gl.render.targets;
 using GnomeGlDesktop.gl.shaders;
 using GnomeGlDesktop.window;
-using OpenTK.Graphics.OpenGL.Compatibility;
+using OpenTK.Graphics.OpenGL;
 using OpenTK.Mathematics;
 using OpenTK.Windowing.GraphicsLibraryFramework;
 
@@ -21,10 +22,10 @@ public class Renderer : IDisposable {
 	
 	private int _samples = 4;
 
+	private readonly RendererRenderables _renderables = new();
+
 	private readonly List<GlfwWindow> _windows = new();
-	private readonly RendererBlitTargets _generalBlitTargets = new();
-	private readonly RendererBlitTargets _postprocessBlitTargets = new();
-	private readonly RendererBlitTargets _finalBlitTargets = new();
+	private readonly RendererBlitTargets[] _blitTargets = {new(), new(), new()};
 
 	public Renderer() {
 		GlContext.global.MakeCurrent();
@@ -65,33 +66,15 @@ public class Renderer : IDisposable {
 	}
 
 	public void AddBlitDestination(IBlitDest dest, BlitDestPlace place, DrawBufferMode attachment = DrawBufferMode.ColorAttachment0) {
-		RendererBlitTargets trgt = place switch {
-			BlitDestPlace.afterRender => _generalBlitTargets,
-			BlitDestPlace.afterPostProcess => _postprocessBlitTargets,
-			BlitDestPlace.final => _finalBlitTargets,
-			_ => throw new ArgumentOutOfRangeException(nameof(place), place, null)
-		};
-		trgt.AddTarget(dest, attachment);
+		_blitTargets[(int)place].AddTarget(dest, attachment);
 	}
 	
 	public void RemoveBlitDestination(IBlitDest dest, BlitDestPlace place, DrawBufferMode attachment = DrawBufferMode.ColorAttachment0) {
-		RendererBlitTargets trgt = place switch {
-			BlitDestPlace.afterRender => _generalBlitTargets,
-			BlitDestPlace.afterPostProcess => _postprocessBlitTargets,
-			BlitDestPlace.final => _finalBlitTargets,
-			_ => throw new ArgumentOutOfRangeException(nameof(place), place, null)
-		};
-		trgt.RemoveTarget(dest, attachment);
+		_blitTargets[(int)place].RemoveTarget(dest, attachment);
 	}
 
 	protected void Blit(IBlitSrc src, BlitDestPlace place, ReadBufferMode attachment = ReadBufferMode.ColorAttachment0) {
-		RendererBlitTargets trgt = place switch {
-			BlitDestPlace.afterRender => _generalBlitTargets,
-			BlitDestPlace.afterPostProcess => _postprocessBlitTargets,
-			BlitDestPlace.final => _finalBlitTargets,
-			_ => throw new ArgumentOutOfRangeException(nameof(place), place, null)
-		};
-		trgt.Blit(src, attachment);
+		_blitTargets[(int)place].Blit(src, attachment);
 	}
 
 	public GlfwWindow GetWindow(int i) => _windows[i];
@@ -109,7 +92,7 @@ public class Renderer : IDisposable {
 		Blit(_postProcess, BlitDestPlace.afterRender);
 		
 		// run post process
-		PostProcess();
+		_renderables.PostProcess(this);
 		
 		// blit post-processed image to other blit targets (e.g. ImGui ui)
 		Blit(_postProcess, BlitDestPlace.afterPostProcess);
@@ -138,13 +121,12 @@ public class Renderer : IDisposable {
 		_timer.Wait();
 		_general.Begin();
 		GL.Viewport(0, 0, _general.framebufferSize.X, _general.framebufferSize.Y);
-		OnRender();
+		_renderables.Render(this);
 		End();
 	}
 	
 	protected virtual void OnLoad() { }
 	protected virtual void OnUnload() { }
-	protected virtual void OnRender() { }
 	
 	private unsafe bool ShouldClose() => _windows.Any(win => GLFW.WindowShouldClose(win.windowPtr));
 
@@ -159,6 +141,11 @@ public class Renderer : IDisposable {
 	public void SetResolution(Vector2i resolution) => _resolution.targetResolution = resolution;
 	public void SetRenderingQuality(float quality) => _resolution.postprocessQuality = _resolution.renderQuality = quality;
 	public void SetDownsampleQuality(float quality) => _resolution.postprocessDownsampledQuality = quality;
+
+	public void AddRenderable(IRenderable v) => _renderables.AddRenderable(v);
+	public void RemoveRenderable(IRenderable v) => _renderables.RemoveRenderable(v);
+	public void AddPostFx(IPostProcessEffect v) => _renderables.AddPostProcess(v);
+	public void RemovePostFx(IPostProcessEffect v) => _renderables.RemovePostProcess(v);
 	
 	private void ReleaseUnmanagedResources() {
 		foreach (GlfwWindow window in _windows) window.Dispose();

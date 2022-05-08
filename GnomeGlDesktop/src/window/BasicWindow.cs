@@ -1,5 +1,3 @@
-using ImGuiNET;
-using OpenTK.Graphics.OpenGL.Compatibility;
 using OpenTK.Windowing.Desktop;
 using OpenTK.Windowing.GraphicsLibraryFramework;
 
