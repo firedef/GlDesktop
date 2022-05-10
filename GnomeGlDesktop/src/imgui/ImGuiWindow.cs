@@ -103,14 +103,12 @@ public abstract class ImGuiWindow : BasicWindow {
 	protected override void OnTextInput(TextInputEventArgs e) {
 		base.OnTextInput(e);
 		GlContext.global.MakeCurrent();
-		//Context.MakeCurrent();
 		if (enableImGui) _controller.PressChar((char) e.Unicode);
 	}
 
 	protected override void OnMouseWheel(MouseWheelEventArgs e) {
 		base.OnMouseWheel(e);
 		GlContext.global.MakeCurrent();
-		//Context.MakeCurrent();
 		if (enableImGui) _controller.OnMouseScroll(e.Offset);
 	}
 }

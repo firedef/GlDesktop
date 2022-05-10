@@ -1,7 +1,10 @@
 using GnomeGlDesktop.gl;
 using GnomeGlDesktop.gl.buffers;
+using GnomeGlDesktop.gl.render.postProcess;
+using GnomeGlDesktop.gl.render.renderer;
 using GnomeGlDesktop.gl.shaders;
 using GnomeGlDesktop.window;
+using GnomeGlDesktop.window.input;
 using ImGuiNET;
 using MathStuff;
 using MathStuff.vectors;
@@ -228,13 +231,17 @@ void main()
 	public void Update(BasicWindow win) {
 		if (_frameStarted) ImGui.Render();
 		
-		//_vao.Bind();
-		//_ibo.Bind();
-		//_vbo.Bind();
-		//_shader.Bind();
-		
 		SetFrameData((float)win.renderTimeDelta/1000);
 		UpdateInput(win);
+		_frameStarted = true;
+		ImGui.NewFrame();
+	}
+	
+	public void Update(ImGuiOverlay overlay, Renderer renderer) {
+		if (_frameStarted) ImGui.Render();
+		
+		SetFrameData(renderer.renderTimeDelta/1000);
+		UpdateInput(overlay.window);
 		_frameStarted = true;
 		ImGui.NewFrame();
 	}
@@ -325,6 +332,30 @@ void main()
 		io.KeyAlt = keyboard.IsKeyDown(Keys.LeftAlt) || keyboard.IsKeyDown(Keys.RightAlt);
 		io.KeyShift = keyboard.IsKeyDown(Keys.LeftShift) || keyboard.IsKeyDown(Keys.RightShift);
 		io.KeySuper = keyboard.IsKeyDown(Keys.LeftSuper) || keyboard.IsKeyDown(Keys.RightSuper);
+	}
+	
+	private void UpdateInput(GlfwWindow win) {
+		ImGuiIOPtr io = ImGui.GetIO();
+		WindowInput input = win.input;
+
+		io.MouseDown[0] = input.IsMouseButtonDown(MouseButtonFlags.left);
+		io.MouseDown[1] = input.IsMouseButtonDown(MouseButtonFlags.right);
+		io.MouseDown[2] = input.IsMouseButtonDown(MouseButtonFlags.middle);
+
+		io.MousePos = new(input.mousePosition.x, input.mousePosition.y);
+
+		foreach (Keys key in _allKeys) {
+			if (key == Keys.Unknown) continue;
+			io.KeysDown[(int)key] = input.IsKeyDown(key);
+		}
+
+		foreach (char c in _pressedChars) io.AddInputCharacter(c);
+		_pressedChars.Clear();
+		
+		io.KeyCtrl = input.IsKeyDown(Keys.LeftControl) || input.IsKeyDown(Keys.RightControl);
+		io.KeyAlt = input.IsKeyDown(Keys.LeftAlt) || input.IsKeyDown(Keys.RightAlt);
+		io.KeyShift = input.IsKeyDown(Keys.LeftShift) || input.IsKeyDown(Keys.RightShift);
+		io.KeySuper = input.IsKeyDown(Keys.LeftSuper) || input.IsKeyDown(Keys.RightSuper);
 	}
 
 	public void OnMouseScroll(Vector2 v) {

@@ -6,6 +6,7 @@ using GnomeGlDesktop.gl.render.renderable;
 using GnomeGlDesktop.gl.render.targets;
 using GnomeGlDesktop.gl.shaders;
 using GnomeGlDesktop.window;
+using MathStuff.vectors;
 using OpenTK.Graphics.OpenGL;
 using OpenTK.Mathematics;
 using OpenTK.Windowing.GraphicsLibraryFramework;
@@ -27,11 +28,13 @@ public class Renderer : IDisposable {
 	private readonly List<GlfwWindow> _windows = new();
 	private readonly RendererBlitTargets[] _blitTargets = {new(), new(), new()};
 
+	public float renderTimeDelta => _timer.renderTimeDelta;
+
 	public Renderer() {
 		GlContext.global.MakeCurrent();
 		
-		Log.Message($"Create general render target {_resolution.renderResolution.X}x{_resolution.renderResolution.Y} with {_samples} samples");
-		_general = new(_resolution.renderResolution.X, _resolution.renderResolution.Y, _samples, InternalFormat.Rgba16f, true);
+		Log.Message($"Create general render target {_resolution.renderResolution.x}x{_resolution.renderResolution.y} with {_samples} samples");
+		_general = new(_resolution.renderResolution.x, _resolution.renderResolution.y, _samples, InternalFormat.Rgb16f, true);
 		
 		// add default color attachment
 		AddGeneralAttachment(AttachmentType.color, InternalFormat.Rgba16f);
@@ -40,6 +43,7 @@ public class Renderer : IDisposable {
 		AddGeneralAttachment(AttachmentType.depthStencil, InternalFormat.Depth24Stencil8);
 		
 		_postProcess = new(_resolution.postProcessResolution, _resolution.postProcessDownsampledResolution);
+		
 		// add default color attachment
 		AddPostProcessAttachment(AttachmentType.color, InternalFormat.Rgb16f);
 		
@@ -80,7 +84,7 @@ public class Renderer : IDisposable {
 	public GlfwWindow GetWindow(int i) => _windows[i];
 
 	public void RecreateRenderBuffers() {
-		_general.RecreateRenderBuffers(_resolution.renderResolution.X, _resolution.renderResolution.Y, _samples);
+		_general.RecreateRenderBuffers(_resolution.renderResolution.x, _resolution.renderResolution.y, _samples);
 		_postProcess.RecreateTextures(_resolution.postProcessResolution, _resolution.postProcessDownsampledResolution);
 	}
 
@@ -119,9 +123,12 @@ public class Renderer : IDisposable {
 	
 	private void Render() {
 		_timer.Wait();
+		
+		GlContext.global.MakeCurrent();
 		_general.Begin();
-		GL.Viewport(0, 0, _general.framebufferSize.X, _general.framebufferSize.Y);
+		GL.Viewport(0, 0, _general.framebufferSize.x, _general.framebufferSize.y);
 		_renderables.Render(this);
+		
 		End();
 	}
 	
@@ -133,12 +140,13 @@ public class Renderer : IDisposable {
 	public void UniformTexture(int id, uint loc) => _postProcess.UniformTextureAttachment(id, loc);
 	public void UniformDownsampledTexture(int id, uint loc) => _postProcess.UniformDownsampledTextureAttachment(id, loc);
 
+	public void BindPostProcessFramebuffer() => _postProcess.textures.Begin();
 	public void PostProcess(ShaderProgram shader, DrawBufferMode attachment = DrawBufferMode.ColorAttachment0) => _postProcess.PostProcess(shader, attachment);
 	public void ApplyToDownsampledTexture(ShaderProgram shader, DrawBufferMode attachment = DrawBufferMode.ColorAttachment0) => _postProcess.DrawToDownsampledTexture(shader, attachment);
 
 	public void SetFramerate(int framerate) => _timer.frequency = framerate;
 	public void SetSamples(int samples) => _samples = samples;
-	public void SetResolution(Vector2i resolution) => _resolution.targetResolution = resolution;
+	public void SetResolution(int2 resolution) => _resolution.targetResolution = resolution;
 	public void SetRenderingQuality(float quality) => _resolution.postprocessQuality = _resolution.renderQuality = quality;
 	public void SetDownsampleQuality(float quality) => _resolution.postprocessDownsampledQuality = quality;
 

@@ -1,3 +1,4 @@
+using MathStuff.vectors;
 using OpenTK.Graphics;
 using OpenTK.Graphics.OpenGL;
 using OpenTK.Mathematics;
@@ -17,12 +18,12 @@ public readonly struct RenderTexture : IFramebufferAttachment {
 		this.format = format;
 	}
 
-	public static RenderTexture Create(FrameBuffer frameBuffer, FramebufferAttachment attachment, Vector2i size, int samples = 0, SizedInternalFormat format = SizedInternalFormat.Rgba16f, int levels = 1) {
+	public static RenderTexture Create(FrameBuffer frameBuffer, FramebufferAttachment attachment, int2 size, int samples = 0, SizedInternalFormat format = SizedInternalFormat.Rgba16f, int levels = 1) {
 		bool ms = samples > 0;
 		RenderTexture tex = new(GL.CreateTexture(ms ? TextureTarget.Texture2dMultisample : TextureTarget.Texture2d), samples, attachment, (InternalFormat) format);
 		
-		if (ms) GL.TextureStorage2DMultisample(tex.handle, samples, format, size.X, size.Y, 1);
-		else GL.TextureStorage2D(tex.handle, levels, format, size.X, size.Y);
+		if (ms) GL.TextureStorage2DMultisample(tex.handle, samples, format, size.x, size.y, 1);
+		else GL.TextureStorage2D(tex.handle, levels, format, size.x, size.y);
 		
 		tex.AttachToFrameBuffer(frameBuffer, attachment);
 		return tex;

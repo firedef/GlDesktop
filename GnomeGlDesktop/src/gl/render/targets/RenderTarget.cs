@@ -1,6 +1,7 @@
 using GnomeGlDesktop.debug.log;
 using GnomeGlDesktop.gl.render.attachments;
 using GnomeGlDesktop.gl.render.blit;
+using MathStuff.vectors;
 using OpenTK.Graphics.OpenGL;
 using OpenTK.Mathematics;
 
@@ -9,7 +10,7 @@ namespace GnomeGlDesktop.gl.render.targets;
 public class RenderTarget : IDisposable, IRenderTarget, IBlittable {
 	public FrameBuffer frameBuffer;
 	public List<IFramebufferAttachment> attachments = new();
-	public Vector2i framebufferSize { get; set; }
+	public int2 framebufferSize { get; set; }
 	public bool useRenderBuffer;
 
 	public uint colorAttachmentCount = 0;
@@ -17,7 +18,7 @@ public class RenderTarget : IDisposable, IRenderTarget, IBlittable {
 	public FrameBuffer currentFramebuffer => frameBuffer;
 
 	public FrameBuffer GetBlitDestFramebuffer() => frameBuffer;
-	public Vector2i GetBlitDestFramebufferSize() => framebufferSize;
+	public int2 GetBlitDestFramebufferSize() => framebufferSize;
 
 	public RenderTarget() { }
 	
@@ -76,8 +77,8 @@ public class RenderTarget : IDisposable, IRenderTarget, IBlittable {
 		Log.Note($"Add {id} {format} to render target {frameBuffer.handle.Handle} with {samples} samples");
 	}
 	
-	public void BlitToScreen(Vector2i screenSize) {
-		frameBuffer.BlitTo(FrameBuffer.screen, framebufferSize.X, framebufferSize.Y, screenSize.X, screenSize.Y, ClearBufferMask.ColorBufferBit);
+	public void BlitToScreen(int2 screenSize) {
+		frameBuffer.BlitTo(FrameBuffer.screen, framebufferSize.x, framebufferSize.y, screenSize.x, screenSize.y, ClearBufferMask.ColorBufferBit);
 	}
 	
 	public void Blit(IBlitDest renderTarget, ReadBufferMode srcAttachment = ReadBufferMode.ColorAttachment0, DrawBufferMode dstAttachment = DrawBufferMode.ColorAttachment0) {
@@ -87,7 +88,7 @@ public class RenderTarget : IDisposable, IRenderTarget, IBlittable {
 		GL.BindFramebuffer(FramebufferTarget.DrawFramebuffer, renderTarget.GetBlitDestFramebuffer().handle);
 		GL.ReadBuffer(srcAttachment);
 		GL.DrawBuffer(dstAttachment);
-		frameBuffer.BlitTo(renderTarget.GetBlitDestFramebuffer(), framebufferSize.X, framebufferSize.Y, renderTarget.GetBlitDestFramebufferSize().X, renderTarget.GetBlitDestFramebufferSize().Y, ClearBufferMask.ColorBufferBit, BlitFramebufferFilter.Linear);
+		frameBuffer.BlitTo(renderTarget.GetBlitDestFramebuffer(), framebufferSize.x, framebufferSize.y, renderTarget.GetBlitDestFramebufferSize().x, renderTarget.GetBlitDestFramebufferSize().y, ClearBufferMask.ColorBufferBit, BlitFramebufferFilter.Linear);
 		GL.ReadBuffer(ReadBufferMode.ColorAttachment0);
 		GL.DrawBuffer(DrawBufferMode.ColorAttachment0);
 		

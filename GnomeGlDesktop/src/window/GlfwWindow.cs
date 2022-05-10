@@ -1,39 +1,44 @@
 using GnomeGlDesktop.gl.render;
 using GnomeGlDesktop.gl.render.blit;
-using GnomeGlDesktop.utils;
+using MathStuff.vectors;
 using OpenTK.Mathematics;
 using OpenTK.Windowing.GraphicsLibraryFramework;
-using X11;
 using Monitor = OpenTK.Windowing.GraphicsLibraryFramework.Monitor;
 using Window = OpenTK.Windowing.GraphicsLibraryFramework.Window;
 
 namespace GnomeGlDesktop.window; 
 
-public unsafe class GlfwWindow : IDisposable, IBlitDest {
+public unsafe partial class GlfwWindow : IDisposable, IBlitDest {
 	public readonly Window* windowPtr;
-	public Vector2i size { get; protected set; }
+	public int2 size { get; protected set; }
+	public readonly List<IWindowEvents> windowEventsListeners = new();
 
 	public X11.Window x11Window => (X11.Window)GLFW.GetX11Window(windowPtr);
 
-	private GlfwWindow(Window* windowPtr) => this.windowPtr = windowPtr;
+	private GlfwWindow(Window* windowPtr) {
+		this.windowPtr = windowPtr;
+		RegisterCallbacks();
+	}
 	
 	public void MakeCurrent() => GLFW.MakeContextCurrent(windowPtr);
 	public void Swap() => GLFW.SwapBuffers(windowPtr);
 
-	public void SetPosition(Vector2i pos) => GLFW.SetWindowPos(windowPtr, pos.X, pos.Y);
+	public void SetPosition(int2 pos) => GLFW.SetWindowPos(windowPtr, pos.x, pos.y);
 
-	public static GlfwWindow Create(Vector2i size, string name, Monitor* monitor, Window* share) {
+	public static GlfwWindow Create(int2 size, string name, Monitor* monitor, Window* share) {
 		GLFW.WindowHint(WindowHintInt.ContextVersionMinor, 5);
 		GLFW.WindowHint(WindowHintInt.ContextVersionMajor, 4);
 		GLFW.WindowHint(WindowHintOpenGlProfile.OpenGlProfile, OpenGlProfile.Core);
-		GlfwWindow win = new(GLFW.CreateWindow(size.X, size.Y, name, monitor, share));
+		GlfwWindow win = new(GLFW.CreateWindow(size.x, size.y, name, monitor, share));
 		win.size = size;
+		win.OnLoad();
 		return win;
 	}
 
 	private void ReleaseUnmanagedResources() {
 		GLFW.DestroyWindow(windowPtr);
 	}
+	
 	public void Dispose() {
 		ReleaseUnmanagedResources();
 		GC.SuppressFinalize(this);
@@ -41,8 +46,11 @@ public unsafe class GlfwWindow : IDisposable, IBlitDest {
 	~GlfwWindow() => ReleaseUnmanagedResources();
 	
 	public FrameBuffer GetBlitDestFramebuffer() => FrameBuffer.screen;
-	public Vector2i GetBlitDestFramebufferSize() => size;
-	
-	public void BeforeBlit(IBlitSrc src) => MakeCurrent();
+	public int2 GetBlitDestFramebufferSize() => size;
+
+	public void BeforeBlit(IBlitSrc src) {
+		MakeCurrent();
+		GLFW.PollEvents();
+	}
 	public void AfterBlit(IBlitSrc src) => Swap();
 }

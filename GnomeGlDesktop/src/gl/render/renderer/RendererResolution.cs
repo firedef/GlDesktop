@@ -1,21 +1,22 @@
 using GnomeGlDesktop.utils;
+using MathStuff.vectors;
 using OpenTK.Mathematics;
 
 namespace GnomeGlDesktop.gl.render.renderer; 
 
 public class RendererResolution {
-	public Vector2i targetResolution;
+	public int2 targetResolution;
 	
 	public float renderQuality = 1f;
 	public float postprocessQuality = 1f;
 	public float postprocessDownsampledQuality = .2f;
 
-	public Vector2i renderResolution => targetResolution.Mul(renderQuality);
-	public Vector2i postProcessResolution => targetResolution.Mul(postprocessQuality);
-	public Vector2i postProcessDownsampledResolution => targetResolution.Mul(postprocessDownsampledQuality);
-	public Vector2i normalResolution => targetResolution;
+	public int2 renderResolution => targetResolution.Mul(renderQuality);
+	public int2 postProcessResolution => targetResolution.Mul(postprocessQuality);
+	public int2 postProcessDownsampledResolution => targetResolution.Mul(postprocessDownsampledQuality);
+	public int2 normalResolution => targetResolution;
 
-	public RendererResolution(Vector2i targetResolution) {
+	public RendererResolution(int2 targetResolution) {
 		this.targetResolution = targetResolution;
 	}
 }

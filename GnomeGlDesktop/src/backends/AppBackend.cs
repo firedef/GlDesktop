@@ -1,5 +1,6 @@
 using GnomeGlDesktop.debug.log;
 using GnomeGlDesktop.window;
+using MathStuff.vectors;
 using OpenTK.Mathematics;
 using OpenTK.Windowing.GraphicsLibraryFramework;
 using Monitor = OpenTK.Windowing.GraphicsLibraryFramework.Monitor;
@@ -11,17 +12,17 @@ public abstract class AppBackend {
 
 	private static AppBackend CreateBackend() => new X11Backend();
 	
-	public virtual unsafe GlfwWindow CreateWindow(Vector2i size, string name, Monitor* monitor, Window* share) => GlfwWindow.Create(size, name, monitor, share);
+	public virtual unsafe GlfwWindow CreateWindow(int2 size, string name, Monitor* monitor, Window* share) => GlfwWindow.Create(size, name, monitor, share);
 
 	public virtual unsafe GlfwWindow CreateDesktopWindow(string name, Monitor* monitor, Window* share) {
 		const bool decorated = false;
 		const bool maximized = true;
-		const bool autoIconify = true;
+		const bool autoIconify = false;
 		const bool doubleBuffer = false;
 		
-		Vector2i size = GetMonitorSize(monitor);
+		GetMonitorSize(monitor).Deconstruct(out int sX, out int sY);
 		
-		Log.Note($"Create desktop window '{name}' {size.X}x{size.Y}");
+		Log.Note($"Create desktop window '{name}' {sX}x{sY}");
 		Log.Minimal($"  Decorated:    {decorated}");
 		Log.Minimal($"  Maximized:    {maximized}");
 		Log.Minimal($"  AutoIconify:  {autoIconify}");
@@ -32,7 +33,7 @@ public abstract class AppBackend {
 		GLFW.WindowHint(WindowHintBool.AutoIconify, autoIconify);
 		GLFW.WindowHint(WindowHintBool.DoubleBuffer, doubleBuffer);
 		
-		GlfwWindow window = CreateWindow(size, name, monitor, share);
+		GlfwWindow window = CreateWindow(new(sX, sY), name, monitor, share);
 		
 		SetWindowType(window, WindowType.desktop);
 		MoveWindowToMonitor(window, monitor);

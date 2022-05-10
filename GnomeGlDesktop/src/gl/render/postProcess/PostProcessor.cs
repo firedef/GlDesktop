@@ -15,23 +15,23 @@ public class PostProcessor : IDisposable, IBlittable {
 	public readonly RenderTexturesTarget textures;
 	public readonly RenderTexturesTarget downsampledTextures;
 
-	private Vector2i resolution;
-	private Vector2i downsampleResolution;
+	private int2 resolution;
+	private int2 downsampleResolution;
 	
 	private readonly Mesh<Vertex, byte> _screenMesh;
 	
 	public FrameBuffer GetBlitDestFramebuffer() => textures.currentFramebuffer;
-	public Vector2i GetBlitDestFramebufferSize() => textures.framebufferSize;
+	public int2 GetBlitDestFramebufferSize() => textures.framebufferSize;
 
-	public PostProcessor(Vector2i resolution, Vector2i downsampleResolution) {
+	public PostProcessor(int2 resolution, int2 downsampleResolution) {
 		this.resolution = resolution;
 		this.downsampleResolution = downsampleResolution;
 		
-		Log.Message($"Create postprocess render target {resolution.X}x{resolution.Y}");
-		textures = new(resolution.X, resolution.Y);
+		Log.Message($"Create postprocess render target {resolution.x}x{resolution.y}");
+		textures = new(resolution.x, resolution.y);
 
-		Log.Message($"Create postprocess downsampled render target {downsampleResolution.X}x{downsampleResolution.Y}");
-		downsampledTextures = new(downsampleResolution.X, downsampleResolution.Y);
+		Log.Message($"Create postprocess downsampled render target {downsampleResolution.x}x{downsampleResolution.y}");
+		downsampledTextures = new(downsampleResolution.x, downsampleResolution.y);
 
 		Vertex[] vertices = {
 			new(new(-1,-1), float3.front, color.white, new(0,0), new(0,0)),
@@ -45,15 +45,15 @@ public class PostProcessor : IDisposable, IBlittable {
 		_screenMesh.Buffer();
 	}
 
-	public void RecreateTextures(Vector2i targetResolution, Vector2i targetDownsampleResolution) {
+	public void RecreateTextures(int2 targetResolution, int2 targetDownsampleResolution) {
 		resolution = targetResolution;
 		downsampleResolution = targetDownsampleResolution;
 		
-		Log.Message($"Recreate postprocess render target {resolution.X}x{resolution.Y}");
-		textures.RecreateRenderBuffers(targetResolution.X, targetResolution.Y);
+		Log.Message($"Recreate postprocess render target {resolution.x}x{resolution.y}");
+		textures.RecreateRenderBuffers(targetResolution.x, targetResolution.y);
 		
-		Log.Message($"Recreate postprocess downsampled render target {downsampleResolution.X}x{downsampleResolution.Y}");
-		downsampledTextures.RecreateRenderBuffers(targetDownsampleResolution.X, targetDownsampleResolution.Y);
+		Log.Message($"Recreate postprocess downsampled render target {downsampleResolution.x}x{downsampleResolution.y}");
+		downsampledTextures.RecreateRenderBuffers(targetDownsampleResolution.x, targetDownsampleResolution.y);
 	}
 	public void Swap() => textures.Swap();
 	public void AddAttachment(AttachmentType type, InternalFormat format, float quality = 1) => textures.AddAttachment(0, type, format, quality);
@@ -62,7 +62,7 @@ public class PostProcessor : IDisposable, IBlittable {
 	public void UniformDownsampledTextureAttachment(int id, uint location) => ((RenderTexture)downsampledTextures.currentAttachments[id]).Uniform(location);
 	
 	public void PostProcess(ShaderProgram shader, DrawBufferMode mode = DrawBufferMode.ColorAttachment0) {
-		GL.Viewport(0, 0, resolution.X, resolution.Y);
+		GL.Viewport(0, 0, resolution.x, resolution.y);
 		shader.Bind();
 		
 		textures.Swap();
@@ -75,7 +75,7 @@ public class PostProcessor : IDisposable, IBlittable {
 	}
 	
 	public void DrawToDownsampledTexture(ShaderProgram shader, DrawBufferMode mode = DrawBufferMode.ColorAttachment0) {
-		GL.Viewport(0, 0, downsampleResolution.X, downsampleResolution.Y);
+		GL.Viewport(0, 0, downsampleResolution.x, downsampleResolution.y);
 		shader.Bind();
 		
 		downsampledTextures.Swap();
@@ -87,7 +87,7 @@ public class PostProcessor : IDisposable, IBlittable {
 		GL.DrawBuffer(DrawBufferMode.ColorAttachment0);
 	}
 
-	public void BlitToScreen(Vector2i screenSize) {
+	public void BlitToScreen(int2 screenSize) {
 		textures.BlitToScreen(screenSize);
 	}
 	

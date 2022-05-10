@@ -1,8 +1,9 @@
+using MathStuff.vectors;
 using OpenTK.Mathematics;
 
 namespace GnomeGlDesktop.gl.render.targets; 
 
 public interface IRenderTarget {
 	public FrameBuffer currentFramebuffer { get; }
-	public Vector2i framebufferSize { get; set; }
+	public int2 framebufferSize { get; set; }
 }

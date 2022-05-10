@@ -1,8 +1,10 @@
 using GnomeGlDesktop.gl.render.attachments;
+using GnomeGlDesktop.gl.render.postProcess;
 using GnomeGlDesktop.gl.render.renderable;
 using GnomeGlDesktop.gl.render.renderer;
 using GnomeGlDesktop.gl.shaders;
 using GnomeGlDesktop.objects.mesh;
+using GnomeGlDesktop.window;
 using MathStuff;
 using MathStuff.vectors;
 using OpenTK.Graphics.OpenGL;
@@ -56,7 +58,7 @@ void main() {
 	vec2 tex_offset = vec2(step);
 	//vec2 tex_offset = 1.0 / textureSize(screen, 0);
 
-    vec3 result = texture(screen, f_uv).rgb * (0.2270270270 + 2);
+    vec3 result = texture(screen, f_uv).rgb * 0.2270270270;
     if(horizontal)
     {
 		result += texture(screen, f_uv + vec2(tex_offset.x * 1.3846153846, 0.0)).rgb * 0.3162162162;
@@ -73,7 +75,7 @@ void main() {
 		result += texture(screen, f_uv + vec2(0.0, tex_offset.y * 3.2307692308)).rgb * 0.0702702703;
 		result += texture(screen, f_uv - vec2(0.0, tex_offset.y * 3.2307692308)).rgb * 0.0702702703;
     }
-    frag_col = vec4(result / 3, 1.0);
+    frag_col = vec4(result, 1.0);
 }
 ";
 	
@@ -183,6 +185,14 @@ void main() {
 		renderer.AddRenderable(new TestRenderable(this));
 		renderer.AddPostFx(new TestPostProcessFx(this));
 	}
+
+	public void AddImGui() {
+		ImGuiOverlay imGuiOverlay = new();
+		renderer.GetWindow(0).windowEventsListeners.Add(imGuiOverlay);
+		renderer.AddPostFx(imGuiOverlay);
+		
+		imGuiOverlay.OnLoad(renderer.GetWindow(0));
+	}
 }
 
 public class TestRenderable : IRenderable {
@@ -260,6 +270,9 @@ public class TestRenderable : IRenderable {
 		custom._mesh2!.Draw();
 		
 		custom.time += 8f * (delta * 4 + 1);
+
+		GlfwWindow win = renderer.GetWindow(0);
+		win.input.mousePosition = new((float)xC, (float)yC);
 	}
 }
 
@@ -294,7 +307,7 @@ public class TestPostProcessFx : IPostProcessEffect {
 			custom.renderer.ApplyToDownsampledTexture(custom.shader4, DrawBufferMode.ColorAttachment1);
 			
 			custom.shader.Bind();
-			for (int i = 0; i < 9; i++) {
+			for (int i = 0; i < 4; i++) {
 				GL.Uniform1i(locHorizontal, 0);
 				GL.Uniform1f(locStep, 0.001f * (i + 3));
 				custom.renderer.UniformDownsampledTexture(1, 0);

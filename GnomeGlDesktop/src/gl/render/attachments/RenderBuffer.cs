@@ -1,3 +1,4 @@
+using MathStuff.vectors;
 using OpenTK.Graphics;
 using OpenTK.Graphics.OpenGL;
 using OpenTK.Mathematics;
@@ -17,9 +18,9 @@ public readonly struct RenderBuffer : IDisposable, IFramebufferAttachment {
 
 	public static RenderBuffer Create(FramebufferAttachment attachmentId, InternalFormat format) => new(GL.CreateRenderbuffer(), attachmentId, format);
 
-	public static RenderBuffer Create(FrameBuffer frameBuffer, FramebufferAttachment attachment, Vector2i size, int samples = 0, InternalFormat format = InternalFormat.Rgba) {
+	public static RenderBuffer Create(FrameBuffer frameBuffer, FramebufferAttachment attachment, int2 size, int samples = 0, InternalFormat format = InternalFormat.Rgba) {
 		RenderBuffer buffer = Create(attachment, format);
-		buffer.SetStorage(size.X, size.Y, samples, format);
+		buffer.SetStorage(size.x, size.y, samples, format);
 		buffer.AttachToFrameBuffer(frameBuffer, attachment);
 		return buffer;
 	}

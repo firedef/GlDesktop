@@ -21,6 +21,8 @@ public static class GlDesktop {
 		foreach (Monitor* m in monitors)
 			_renderer.renderer.AddWindow(AppBackend.backend.CreateDesktopWindow("GlDesktop", m, GlContext.global.windowPtr));
 		
+		_renderer.AddImGui();
+		
 		Log.Important("Application loop start");
 		_renderer.renderer.Run();
 		Log.Important("Application loop exit");

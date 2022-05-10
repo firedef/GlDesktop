@@ -1,7 +1,8 @@
+using MathStuff.vectors;
 using OpenTK.Mathematics;
 
 namespace GnomeGlDesktop.utils; 
 
 public static class MathUtils {
-	public static Vector2i Mul(this Vector2i a, float b) => new((int)(a.X * b), (int)(a.Y * b));
+	public static int2 Mul(this int2 a, float b) => new((int)(a.x * b), (int)(a.y * b));
 }
