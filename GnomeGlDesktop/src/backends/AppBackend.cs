@@ -56,4 +56,6 @@ public abstract class AppBackend {
 	public virtual unsafe int GetRefreshRate(Monitor* monitor) => GLFW.GetVideoMode(monitor)->RefreshRate;
 
 	public abstract void SetWindowType(GlfwWindow window, WindowType type);
+
+	public abstract void UpdateWindowInput(GlfwWindow window);
 }

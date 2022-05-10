@@ -1,4 +1,3 @@
-using GnomeGlDesktop.gl.render.attachments;
 using GnomeGlDesktop.gl.render.postProcess;
 using GnomeGlDesktop.gl.render.renderable;
 using GnomeGlDesktop.gl.render.renderer;
