@@ -1,0 +1,13 @@
+bin/
+obj/
+/packages/
+riderModule.iml
+/_ReSharper.Caches/
+.idea/
+GlDesktop.Core/cmake-build-debug/
+GlDesktop.Core/cmake_install.cmake
+GlDesktop.Core/CMakeCache.txt
+GlDesktop.Core/CMakeFiles/
+GlDesktop.Core/Makefile
+GlDesktop.Core/libGlDesktop_Core.so
+GlDesktop/data/libs/libGlDesktop_Core.so
