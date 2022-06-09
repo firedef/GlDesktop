@@ -1,4 +1,5 @@
 using System.Collections;
+using GlDesktop.external;
 using MathStuff.vectors;
 using OpenTK.Windowing.GraphicsLibraryFramework;
 
@@ -15,8 +16,11 @@ public class WindowInput {
 	public float2 mousePosition;
 	public float2 previousMousePosition;
 	public float2 mouseDelta => mousePosition - previousMousePosition;
+	
+	public float2 scroll;
 
 	public readonly BitArray keys = new(keyCount);
+	public readonly List<char> characters = new();
 
 	public bool IsMouseButtonDown(MouseButtonFlags v) => (mouseButtons & v) != 0;
 	public bool IsMouseButtonDown(MouseButton v) => IsMouseButtonDown((MouseButtonFlags)(1 << (int) v));
@@ -40,5 +44,6 @@ public class WindowInput {
 	public void Reset() {
 		mouseButtons = 0;
 		keys.SetAll(false);
+		characters.Clear();
 	}
 }

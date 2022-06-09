@@ -1,3 +1,4 @@
+using GlDesktop.backends;
 using GlDesktop.window.input;
 using MathStuff.vectors;
 using OpenTK.Windowing.Common;
@@ -61,5 +62,11 @@ public unsafe partial class GlfwWindow {
 	
 	protected virtual void OnUnload() {
 		foreach (IWindowEvents listener in windowEventsListeners) listener.OnUnload(this);
+	}
+
+	public void UpdateInput() {
+		AppBackend.backend.UpdateWindowInput(this);
+		
+		//if (input.IsAnyMouseButtonDown())
 	}
 }

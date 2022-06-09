@@ -10,7 +10,7 @@ include_directories(/usr/include)
 include_directories(${CMAKE_SOURCE_DIR}/include)
 link_directories(/usr/lib64)
 link_directories(${CMAKE_SOURCE_DIR}/libs)
-link_libraries(-lX11 -lXi)
+link_libraries(-lX11 -lXi -lxkbcommon)
 
 file(GLOB_RECURSE INC src/*.h src/*.hpp)
 file(GLOB_RECURSE SRC src/*.c src/*.cpp)

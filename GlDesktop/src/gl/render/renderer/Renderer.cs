@@ -123,6 +123,9 @@ public class Renderer : IDisposable {
 	
 	private void Render() {
 		_timer.Wait();
+		foreach (GlfwWindow win in _windows) {
+			win.UpdateInput();
+		}
 		
 		GlContext.global.MakeCurrent();
 		_general.Begin();
